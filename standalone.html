@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>贾门专属 Icebreaker</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --red:#C41E3A;--red-dark:#9B1B30;--gold:#D4A574;--gold-light:#F5E6D3;
+  --cream:#FFF8F0;--dark:#2C1810;--gray:#8B7E74;--white:#FFF;
+  --shadow:0 4px 20px rgba(44,24,16,.12);--shadow-lg:0 8px 40px rgba(44,24,16,.2);
+  --radius:16px;--radius-sm:10px
+}
+html{font-size:16px}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  background:var(--cream);color:var(--dark);min-height:100dvh;overflow-x:hidden
+}
+.hidden{display:none!important}
+
+button{
+  font-family:inherit;cursor:pointer;border:none;border-radius:var(--radius-sm);
+  padding:12px 28px;font-size:1rem;font-weight:600;transition:all .2s
+}
+button:active{transform:scale(.96)}
+.btn-red{background:var(--red);color:#fff;box-shadow:0 4px 15px rgba(196,30,58,.3)}
+.btn-red:hover{background:var(--red-dark)}
+.btn-outline{background:#fff;color:var(--red);border:2px solid var(--red)}
+.btn-outline:hover{background:#FFF0F3}
+.btn-gold{background:linear-gradient(135deg,#D4A574,#C4956A);color:#fff;box-shadow:0 4px 15px rgba(212,165,116,.4)}
+.btn-sm{padding:6px 16px;font-size:.8rem}
+
+input,textarea,select{
+  font-family:inherit;font-size:1rem;border:2px solid #E8DDD4;border-radius:var(--radius-sm);
+  padding:12px 16px;background:#fff;transition:border-color .2s;width:100%
+}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(212,165,116,.15)}
+
+/* ── Main Screen (Projected) ── */
+#main-screen{max-width:1100px;margin:0 auto;padding:28px 36px;min-height:100dvh}
+.screen-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid var(--gold-light)
+}
+.screen-header h1{
+  font-size:2.2rem;
+  background:linear-gradient(135deg,var(--red),var(--red-dark));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text
+}
+.phase-badge{background:var(--gold-light);padding:6px 18px;border-radius:20px;font-size:.9rem;font-weight:600}
+.phase-nav{display:flex;gap:10px;align-items:center;margin-bottom:20px;flex-wrap:wrap}
+
+/* ── LOBBY ── */
+#phase-lobby{text-align:center;padding-top:30px}
+#phase-lobby h2{font-size:2.5rem;margin-bottom:8px}
+#phase-lobby .subtitle{font-size:1.2rem;color:var(--gray);margin-bottom:30px}
+.player-tags{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:20px auto;max-width:700px;min-height:60px}
+.player-tag{
+  background:#fff;padding:12px 24px;border-radius:30px;font-size:1.2rem;font-weight:700;
+  box-shadow:var(--shadow);animation:fadeUp .3s ease;
+  display:flex;align-items:center;gap:8px
+}
+.player-tag .dot{width:10px;height:10px;border-radius:50%;background:#4CAF50}
+.player-tag .del-btn{cursor:pointer;color:#ccc;font-size:1.2rem;line-height:1}
+.player-tag .del-btn:hover{color:var(--red)}
+
+/* ── CARDS ── */
+#phase-cards{text-align:center;padding-top:20px}
+#phase-cards .progress-bar{height:20px;background:#EEE;border-radius:10px;overflow:hidden;max-width:500px;margin:12px auto}
+#phase-cards .progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--red));border-radius:10px;transition:width .5s}
+.card-preview{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:16px}
+.card-chip{
+  background:#fff;padding:6px 16px;border-radius:20px;font-size:.9rem;box-shadow:var(--shadow)
+}
+.card-chip.done{border:2px solid #4CAF50}
+
+/* ── GUESS ── */
+#phase-guess{text-align:center}
+.guess-main-card{
+  background:#fff;border-radius:var(--radius);padding:36px 28px;margin:20px auto;
+  max-width:700px;box-shadow:var(--shadow-lg)
+}
+.guess-turn-label{font-size:1.1rem;color:var(--gray);margin-bottom:6px}
+.guess-turn-name{font-size:2.8rem;font-weight:900;color:var(--red);margin-bottom:20px}
+.guess-card-items{display:grid;gap:12px;text-align:left}
+.guess-card-item{background:var(--gold-light);padding:18px 20px;border-radius:var(--radius-sm);border-left:4px solid var(--gold)}
+.guess-card-item .lbl{font-size:.8rem;color:var(--gray);text-transform:uppercase;margin-bottom:4px}
+.guess-card-item .val{font-size:1.3rem;font-weight:700}
+.guess-dots{display:flex;gap:8px;justify-content:center;margin:12px 0}
+.guess-dot{width:12px;height:12px;border-radius:50%;background:#DDD;transition:.3s}
+.guess-dot.done{background:#4CAF50}
+.guess-dot.cur{background:var(--red);transform:scale(1.4)}
+
+.result-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;
+  justify-content:center;z-index:100;animation:fadeIn .3s
+}
+.result-card{
+  background:#fff;border-radius:var(--radius);padding:44px;text-align:center;
+  max-width:480px;box-shadow:var(--shadow-lg);animation:popIn .4s cubic-bezier(.175,.885,.32,1.275)
+}
+.result-icon{font-size:5rem;margin-bottom:12px}
+
+/* ── BLUFF ── */
+#phase-bluff{text-align:center}
+.bluff-stmt{
+  background:#fff;border-radius:var(--radius-sm);padding:22px 18px;
+  font-size:1.3rem;font-weight:700;box-shadow:var(--shadow);position:relative;
+  border:3px solid transparent;transition:.4s;text-align:left;margin-bottom:12px
+}
+.bluff-stmt .tag{
+  position:absolute;top:-14px;left:14px;background:var(--red);color:#fff;
+  width:30px;height:30px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:.85rem;font-weight:900
+}
+.bluff-stmt.truth{border-color:#4CAF50;background:#F0FFF0;animation:pulse .6s ease 3}
+.bluff-stmt.lie{border-color:#E0E0E0;opacity:.6}
+.leaderboard{margin:20px auto;max-width:460px}
+.lb-item{
+  display:flex;align-items:center;gap:12px;background:#fff;padding:14px 20px;
+  border-radius:var(--radius-sm);margin-bottom:8px;box-shadow:var(--shadow)
+}
+.lb-item.win{background:linear-gradient(135deg,#FFF9E6,#FFE0B2);border:2px solid var(--gold)}
+.lb-rank{font-size:1.4rem;font-weight:900;width:36px}
+
+/* ── PHOTO ── */
+#phase-photo{text-align:center}
+.card-mosaic{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin:28px 0}
+.m-card{
+  background:#fff;border-radius:var(--radius-sm);padding:18px;width:220px;
+  box-shadow:var(--shadow);text-align:left;border-top:4px solid var(--red);animation:fadeUp .5s ease both
+}
+.m-card .m-n{font-size:.85rem;color:var(--gray)}
+.m-card .m-g{font-size:1.1rem;font-weight:700;color:var(--red);margin-bottom:6px}
+.m-card .m-t{margin-top:4px;padding-left:14px;position:relative;font-size:.85rem}
+.m-card .m-t::before{position:absolute;left:0;top:0;font-size:.65rem}
+
+/* ── Host Panel (bottom bar) ── */
+#host-panel{
+  position:fixed;bottom:0;left:0;right:0;background:var(--dark);color:#fff;
+  padding:12px 20px;z-index:50;display:flex;align-items:center;gap:12px;
+  flex-wrap:wrap;font-size:.9rem
+}
+#host-panel button{margin:0}
+#host-panel select{width:auto;min-width:120px}
+#host-panel input{width:auto;min-width:140px}
+#host-panel .panel-toggle{
+  position:absolute;top:-36px;right:16px;background:var(--dark);color:#fff;
+  border-radius:10px 10px 0 0;padding:6px 16px;font-size:.8rem
+}
+#host-panel.collapsed #panel-body{display:none}
+#host-panel.collapsed{padding:0;background:transparent}
+
+.toast{
+  position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--dark);
+  color:#fff;padding:12px 24px;border-radius:30px;font-weight:600;z-index:300;
+  animation:fadeUp .3s ease;box-shadow:var(--shadow-lg)
+}
+
+/* Animations */
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes popIn{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(76,175,80,.4)}50%{box-shadow:0 0 0 15px rgba(76,175,80,0)}}
+
+.confetti{
+  position:fixed;width:10px;height:10px;top:-20px;z-index:200;
+  animation:cf 3s ease forwards;pointer-events:none
+}
+@keyframes cf{0%{transform:translateY(-100px) rotate(0);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+
+@media(max-width:768px){
+  #main-screen{padding:12px}
+  .screen-header h1{font-size:1.4rem}
+  .guess-turn-name{font-size:1.8rem}
+  .guess-card-item .val{font-size:1rem}
+  #host-panel{font-size:.78rem;padding:8px 12px}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════ MAIN SCREEN (projected) ══════════════ -->
+<div id="main-screen">
+  <div class="screen-header">
+    <h1>🎬 贾门专属 Icebreaker</h1>
+    <span class="phase-badge" id="phase-badge">🏠 等待加入</span>
+  </div>
+
+  <div class="phase-nav">
+    <button class="btn-outline btn-sm" onclick="prevPhase()" id="btn-prev" disabled>◀ 上一阶段</button>
+    <button class="btn-red" onclick="nextPhase()" id="btn-next">开始填卡片 ▶</button>
+    <span style="margin-left:auto;font-weight:700;">
+      参与人数：<span id="player-count-display" style="color:var(--red);">0</span>
+    </span>
+  </div>
+
+  <!-- LOBBY -->
+  <div id="phase-lobby">
+    <h2>👋 师门聚会开始！</h2>
+    <p class="subtitle">在下方控制栏中加入所有参与的同门</p>
+    <div class="player-tags" id="player-tags"></div>
+  </div>
+
+  <!-- CARDS -->
+  <div id="phase-cards" class="hidden">
+    <h2 style="font-size:1.8rem;margin-bottom:8px;">📝 填写身份卡</h2>
+    <p style="color:var(--gray);margin-bottom:16px;">在下方控制栏中为每个人填写三项信息</p>
+    <div style="font-size:1.2rem;">已填写：<strong id="cards-done">0</strong> / <strong id="cards-total">0</strong></div>
+    <div class="progress-bar"><div class="progress-fill" id="cards-fill" style="width:0%"></div></div>
+    <div class="card-preview" id="card-preview"></div>
+  </div>
+
+  <!-- GUESS -->
+  <div id="phase-guess" class="hidden">
+    <div class="guess-dots" id="guess-dots"></div>
+    <div class="guess-main-card">
+      <div class="guess-turn-label">🎯 轮到谁来猜？</div>
+      <div class="guess-turn-name" id="guess-name">---</div>
+      <div class="guess-card-items" id="guess-items"></div>
+    </div>
+    <div id="guess-result"></div>
+    <button class="btn-red" id="btn-next-guess" onclick="nextGuess()" style="display:none;margin-top:10px;">下一个 ▶</button>
+    <button class="btn-gold" id="btn-skip-guess" onclick="skipRemainingGuesses()" style="margin-top:10px;">跳过剩余 → 猜真假</button>
+  </div>
+
+  <!-- BLUFF -->
+  <div id="phase-bluff" class="hidden">
+    <div id="bluff-submit-view">
+      <h2 style="font-size:1.8rem;margin-bottom:8px;">🎭 猜真假 — 编造中</h2>
+      <p style="color:var(--gray);margin-bottom:16px;">在下方控制栏中为每个人设置「一条真相 + 两条谎言」</p>
+      <div style="font-size:1.2rem;">已提交：<strong id="bluff-done">0</strong> / <strong id="bluff-total">0</strong></div>
+      <div class="progress-bar"><div class="progress-fill" id="bluff-fill" style="width:0%"></div></div>
+      <button class="btn-red" onclick="startBluffRound()" style="margin-top:16px;">开始投票 ▶</button>
+    </div>
+    <div id="bluff-vote-view" style="display:none;">
+      <div class="guess-dots" id="bluff-dots"></div>
+      <div style="font-size:1.1rem;color:var(--gray);margin-bottom:4px;">
+        猜猜哪个是 <strong id="bluff-player" style="color:var(--red);"></strong> 的真实信息？
+      </div>
+      <div id="bluff-stmts" style="max-width:700px;margin:16px auto;"></div>
+      <div style="margin:12px 0;font-size:1rem;">在下方控制栏中帮大家投票，然后点开奖</div>
+      <button class="btn-gold" onclick="revealBluffAnswer()" style="font-size:1.1rem;">🔔 开奖！</button>
+      <button class="btn-red" id="btn-next-bluff" onclick="nextBluffRound()" style="display:none;margin-top:10px;">下一个 ▶</button>
+    </div>
+    <div id="bluff-done-view" style="display:none;">
+      <h2 style="font-size:2rem;margin-bottom:16px;">🏆 贾门影帝奖</h2>
+      <div class="leaderboard" id="bluff-lb"></div>
+    </div>
+  </div>
+
+  <!-- PHOTO -->
+  <div id="phase-photo" class="hidden">
+    <h2 style="font-size:2rem;margin-bottom:8px;">📸 合影时刻！</h2>
+    <p style="color:var(--gray);font-size:1.1rem;margin-bottom:16px;">贾门大家庭 🎓</p>
+    <div class="card-mosaic" id="mosaic"></div>
+    <button class="btn-gold" onclick="confetti()" style="font-size:1.2rem;padding:16px 40px;margin-top:16px;">🎉 撒花庆祝</button>
+  </div>
+</div>
+
+<!-- ══════════════ HOST CONTROL PANEL ══════════════ -->
+<div id="host-panel">
+  <button class="panel-toggle" onclick="document.getElementById('host-panel').classList.toggle('collapsed')">🎛️ 控制台</button>
+  <div id="panel-body" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;width:100%;">
+    <!-- LOBBY: add player -->
+    <span id="panel-lobby" style="display:flex;align-items:center;gap:8px;">
+      <input type="text" id="add-player-name" placeholder="输入姓名" maxlength="20" style="max-width:150px;">
+      <button class="btn-red btn-sm" onclick="addPlayer()">＋加入</button>
+    </span>
+    <!-- CARDS: fill card for player -->
+    <span id="panel-cards" class="hidden" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+      <select id="card-player-select"><option value="">选人</option></select>
+      <input type="text" id="card-gen" placeholder="学术代际" maxlength="30" style="max-width:160px;">
+      <input type="text" id="card-fact" placeholder="冷知识" maxlength="40" style="max-width:140px;">
+      <input type="text" id="card-event" placeholder="标志事件" maxlength="40" style="max-width:140px;">
+      <button class="btn-red btn-sm" onclick="submitPlayerCard()">提交卡片</button>
+    </span>
+    <!-- GUESS: make a guess for current player -->
+    <span id="panel-guess" class="hidden" style="display:flex;align-items:center;gap:6px;">
+      <span style="white-space:nowrap;">当前猜的是</span>
+      <strong id="panel-guess-name" style="color:var(--gold);">---</strong>
+      <span>，TA猜：</span>
+      <select id="guess-target-select"><option value="">选名字</option></select>
+      <button class="btn-gold btn-sm" onclick="makeGuess()">提交猜测</button>
+    </span>
+    <!-- BLUFF: set up truth+lies for a player -->
+    <span id="panel-bluff" class="hidden" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+      <select id="bluff-player-select"><option value="">选人</option></select>
+      <select id="bluff-truth-select" style="max-width:180px;"><option value="">选真实信息</option></select>
+      <input type="text" id="bluff-lie1" placeholder="假信息1" maxlength="50" style="max-width:140px;">
+      <input type="text" id="bluff-lie2" placeholder="假信息2" maxlength="50" style="max-width:140px;">
+      <button class="btn-red btn-sm" onclick="submitBluffSetup()">提交</button>
+      |
+      <span id="bluff-vote-panel" style="display:none;">
+        投票：
+        <select id="bluff-vote-select"><option value="">猜哪个是真的</option><option value="0">A</option><option value="1">B</option><option value="2">C</option></select>
+        <button class="btn-outline btn-sm" onclick="castBluffVote()">投票</button>
+      </span>
+    </span>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+//  GAME STATE (all in-memory, no server)
+// ═══════════════════════════════════════
+let phase = 'LOBBY';
+let players = [];           // [{ id, name }]
+let cards = {};             // { playerId: { gen, fact, event } }
+let cardDone = new Set();  // set of playerId who have cards
+
+// GUESS state
+let guessOrder = [];
+let guessAssignments = {};  // { guesserId: cardOwnerId }
+let guessIdx = 0;
+let guessResults = [];
+
+// BLUFF state
+let bluffs = {};            // { playerId: { truth, lie1, lie2, shuffled: [{text,isTruth}] } }
+let bluffDone = new Set();
+let bluffOrder = [];
+let bluffIdx = 0;
+let bluffVotes = {};        // { voterId: chosenIndex }
+let bluffRevealed = false;
+let bluffResults = [];
+
+let uid = 0;
+function newId() { return 'p' + (++uid); }
+
+// ═══════════════════════════════════════
+//  PHASE NAVIGATION
+// ═══════════════════════════════════════
+const PHASES = ['LOBBY','CARDS','GUESS','BLUFF','PHOTO'];
+const BADGES = {LOBBY:'🏠 等待加入',CARDS:'📝 填写卡片',GUESS:'🔍 竞猜环节',BLUFF:'🎭 猜真假',PHOTO:'📸 合影'};
+const NEXT_LABELS = {LOBBY:'开始填卡片 ▶',CARDS:'开始竞猜 ▶',GUESS:'开始猜真假 ▶',BLUFF:'合影留念 ▶'};
+
+function switchPhase(p) {
+  phase = p;
+  document.getElementById('phase-badge').textContent = BADGES[p]||p;
+  document.getElementById('phase-lobby').classList.toggle('hidden', p!=='LOBBY');
+  document.getElementById('phase-cards').classList.toggle('hidden', p!=='CARDS');
+  document.getElementById('phase-guess').classList.toggle('hidden', p!=='GUESS');
+  document.getElementById('phase-bluff').classList.toggle('hidden', p!=='BLUFF');
+  document.getElementById('phase-photo').classList.toggle('hidden', p!=='PHOTO');
+
+  const idx = PHASES.indexOf(p);
+  document.getElementById('btn-prev').disabled = idx <= 0;
+  const nb = document.getElementById('btn-next');
+  if (idx >= PHASES.length-1) { nb.textContent='已是最后阶段'; nb.disabled=true; }
+  else { nb.textContent = NEXT_LABELS[p]||'下一阶段 ▶'; nb.disabled=false; }
+
+  // Toggle host panel sections
+  document.getElementById('panel-lobby').classList.toggle('hidden', p!=='LOBBY');
+  document.getElementById('panel-cards').classList.toggle('hidden', p!=='CARDS');
+  document.getElementById('panel-guess').classList.toggle('hidden', p!=='GUESS');
+  document.getElementById('panel-bluff').classList.toggle('hidden', p!=='BLUFF');
+
+  renderPlayers();
+}
+
+function nextPhase() {
+  const idx = PHASES.indexOf(phase);
+  if (idx >= PHASES.length-1) return;
+  const next = PHASES[idx+1];
+
+  if (next === 'GUESS') {
+    if (cardDone.size < 2) { return toast('至少需要2人填写卡片'); }
+    setupGuess();
+  }
+  if (next === 'BLUFF') setupBluffPhase();
+  if (next === 'PHOTO') renderMosaic();
+
+  switchPhase(next);
+}
+
+function prevPhase() {
+  const idx = PHASES.indexOf(phase);
+  if (idx <= 0) return;
+  switchPhase(PHASES[idx-1]);
+}
+
+// ═══════════════════════════════════════
+//  PLAYER MANAGEMENT
+// ═══════════════════════════════════════
+function addPlayer() {
+  const input = document.getElementById('add-player-name');
+  const name = input.value.trim();
+  if (!name) return toast('请输入名字');
+  if (players.some(p => p.name === name)) return toast('名字重复');
+  players.push({ id: newId(), name });
+  input.value = '';
+  renderPlayers();
+  document.getElementById('player-count-display').textContent = players.length;
+}
+
+function removePlayer(id) {
+  players = players.filter(p => p.id !== id);
+  delete cards[id]; cardDone.delete(id);
+  delete bluffs[id]; bluffDone.delete(id);
+  renderPlayers();
+  document.getElementById('player-count-display').textContent = players.length;
+}
+
+function renderPlayers() {
+  document.getElementById('player-tags').innerHTML = players.map(p =>
+    `<div class="player-tag"><span class="dot"></span>${esc(p.name)}<span class="del-btn" onclick="removePlayer('${p.id}')">✕</span></div>`
+  ).join('') || '<div style="color:var(--gray);">还没有人加入...</div>';
+
+  // Update selects
+  const sels = ['card-player-select','bluff-player-select'];
+  sels.forEach(sid => {
+    const sel = document.getElementById(sid);
+    if (!sel) return;
+    sel.innerHTML = '<option value="">选人</option>' + players.map(p =>
+      `<option value="${p.id}">${esc(p.name)}</option>`).join('');
+  });
+}
+
+// ═══════════════════════════════════════
+//  CARDS
+// ═══════════════════════════════════════
+function submitPlayerCard() {
+  const pid = document.getElementById('card-player-select').value;
+  const gen = document.getElementById('card-gen').value.trim();
+  const fact = document.getElementById('card-fact').value.trim();
+  const event = document.getElementById('card-event').value.trim();
+  if (!pid) return toast('请选择人');
+  if (!gen||!fact||!event) return toast('三项都要填');
+  cards[pid] = { gen, fact, event };
+  cardDone.add(pid);
+  document.getElementById('card-gen').value='';
+  document.getElementById('card-fact').value='';
+  document.getElementById('card-event').value='';
+  renderCardProgress();
+}
+
+function renderCardProgress() {
+  const done = cardDone.size;
+  const total = players.length;
+  document.getElementById('cards-done').textContent = done;
+  document.getElementById('cards-total').textContent = total;
+  document.getElementById('cards-fill').style.width = (total>0?done/total*100:0)+'%';
+  document.getElementById('card-preview').innerHTML = players.map(p => {
+    const has = cardDone.has(p.id);
+    return `<div class="card-chip ${has?'done':''}">${has?'✓':'○'} ${esc(p.name)}</div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════
+//  GUESS
+// ═══════════════════════════════════════
+function setupGuess() {
+  const ids = players.map(p => p.id);
+  // Derangement
+  let assigned;
+  do { assigned = shuffle([...ids]); }
+  while (ids.length > 1 && assigned.some((a,i) => a===ids[i]));
+  guessOrder = shuffle([...ids]);
+  guessAssignments = {};
+  ids.forEach((id,i) => { guessAssignments[id] = assigned[i]; });
+  guessIdx = 0;
+  guessResults = [];
+  renderGuessRound();
+}
+
+function renderGuessRound() {
+  if (guessIdx >= guessOrder.length) {
+    document.getElementById('guess-name').textContent = '全部猜完！';
+    document.getElementById('guess-items').innerHTML = '<p style="color:var(--gray);font-size:1.2rem;">进入下一阶段吧~</p>';
+    document.getElementById('btn-next-guess').style.display='none';
+    document.getElementById('btn-skip-guess').style.display='none';
+    document.getElementById('guess-result').innerHTML='';
+    return;
+  }
+  const gid = guessOrder[guessIdx];
+  const oid = guessAssignments[gid];
+  const gname = players.find(p=>p.id===gid)?.name||'?';
+  const card = cards[oid];
+  document.getElementById('guess-name').textContent = gname;
+  document.getElementById('guess-items').innerHTML = card ? `
+    <div class="guess-card-item"><div class="lbl">🎂 学术代际</div><div class="val">${esc(card.gen)}</div></div>
+    <div class="guess-card-item"><div class="lbl">❄️ 冷知识</div><div class="val">${esc(card.fact)}</div></div>
+    <div class="guess-card-item"><div class="lbl">⭐ 标志性事件</div><div class="val">${esc(card.event)}</div></div>` : '';
+  document.getElementById('btn-next-guess').style.display='none';
+  document.getElementById('btn-skip-guess').style.display='inline-block';
+  document.getElementById('guess-result').innerHTML='';
+  document.getElementById('panel-guess-name').textContent = gname;
+  // Update guess target select
+  const sel = document.getElementById('guess-target-select');
+  sel.innerHTML = '<option value="">选名字</option>' + players.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('');
+  // Progress dots
+  document.getElementById('guess-dots').innerHTML = guessOrder.map((_,i) =>
+    `<div class="guess-dot${i<guessIdx?' done':''}${i===guessIdx?' cur':''}"></div>`).join('');
+}
+
+function makeGuess() {
+  const gid = guessOrder[guessIdx];
+  const targetId = document.getElementById('guess-target-select').value;
+  if (!targetId) return toast('请选择猜测对象');
+  const correct = targetId === guessAssignments[gid];
+  const owner = players.find(p=>p.id===guessAssignments[gid])?.name||'?';
+  const guessed = players.find(p=>p.id===targetId)?.name||'?';
+  guessResults.push({ guesser:gid, correct, owner });
+
+  const penalty = correct ? null : ['🎤 用三个词描述导师（褒义词！）','😂 说一件在师门最糗的事','🗣️ 模仿导师一句经典口头禅'][Math.floor(Math.random()*3)];
+
+  document.getElementById('guess-result').innerHTML = `
+    <div class="result-overlay" onclick="closeGuessResult()">
+      <div class="result-card">
+        <div class="result-icon">${correct?'🎉':'😅'}</div>
+        <div style="font-size:${correct?'2rem':'1.5rem'};font-weight:900;color:${correct?'#4CAF50':'#FF9800'};margin-bottom:10px;">
+          ${correct?'猜对了！':'猜错了！'}
+        </div>
+        <div style="font-size:1.2rem;">卡片主人：<strong style="color:var(--red);">${esc(owner)}</strong></div>
+        ${penalty?`<div style="margin-top:12px;background:#FFF9E6;border:2px dashed var(--gold);padding:12px;border-radius:10px;">${penalty}</div>`:''}
+        <div style="margin-top:14px;color:var(--gray);">点击关闭</div>
+      </div>
+    </div>`;
+  if (correct) confetti();
+}
+
+function closeGuessResult() {
+  document.getElementById('guess-result').innerHTML='';
+  document.getElementById('btn-next-guess').style.display='inline-block';
+}
+
+function nextGuess() {
+  guessIdx++;
+  renderGuessRound();
+}
+
+function skipRemainingGuesses() {
+  guessIdx = guessOrder.length;
+  renderGuessRound();
+}
+
+// ═══════════════════════════════════════
+//  BLUFF
+// ═══════════════════════════════════════
+function setupBluffPhase() {
+  bluffDone = new Set();
+  bluffs = {};
+  bluffOrder = [];
+  bluffIdx = 0;
+  bluffVotes = {};
+  bluffRevealed = false;
+  bluffResults = [];
+  document.getElementById('bluff-submit-view').style.display='block';
+  document.getElementById('bluff-vote-view').style.display='none';
+  document.getElementById('bluff-done-view').style.display='none';
+  updateBluffPlayerSelect();
+  renderBluffProgress();
+  document.getElementById('bluff-vote-panel').style.display='none';
+}
+
+function updateBluffPlayerSelect() {
+  const sel = document.getElementById('bluff-player-select');
+  const truthSel = document.getElementById('bluff-truth-select');
+  sel.innerHTML = '<option value="">选人</option>' + players.map(p =>
+    `<option value="${p.id}">${esc(p.name)}${bluffDone.has(p.id)?' ✓':''}</option>`).join('');
+  // When selecting a player, update truth selector from their card
+  sel.onchange = function() {
+    const pid = this.value;
+    truthSel.innerHTML = '<option value="">选真实信息</option>';
+    if (pid && cards[pid]) {
+      const c = cards[pid];
+      truthSel.innerHTML += `
+        <option value="${escAttr(c.gen)}">🎂 ${esc(c.gen)}</option>
+        <option value="${escAttr(c.fact)}">❄️ ${esc(c.fact)}</option>
+        <option value="${escAttr(c.event)}">⭐ ${esc(c.event)}</option>`;
+    }
+  };
+}
+
+function submitBluffSetup() {
+  const pid = document.getElementById('bluff-player-select').value;
+  const truth = document.getElementById('bluff-truth-select').value;
+  const lie1 = document.getElementById('bluff-lie1').value.trim();
+  const lie2 = document.getElementById('bluff-lie2').value.trim();
+  if (!pid) return toast('请选择人');
+  if (!truth||!lie1||!lie2) return toast('三项都要填');
+  if (truth===lie1||truth===lie2||lie1===lie2) return toast('三条信息不能相同');
+  const shuffled = shuffle([
+    { text:truth, isTruth:true },
+    { text:lie1, isTruth:false },
+    { text:lie2, isTruth:false }
+  ]);
+  bluffs[pid] = { truth, lie1, lie2, shuffled };
+  bluffDone.add(pid);
+  document.getElementById('bluff-lie1').value='';
+  document.getElementById('bluff-lie2').value='';
+  updateBluffPlayerSelect();
+  renderBluffProgress();
+}
+
+function renderBluffProgress() {
+  const done = bluffDone.size;
+  const total = players.length;
+  document.getElementById('bluff-done').textContent = done;
+  document.getElementById('bluff-total').textContent = total;
+  document.getElementById('bluff-fill').style.width = (total>0?done/total*100:0)+'%';
+}
+
+function startBluffRound() {
+  if (bluffDone.size < 2) return toast('至少需要2人提交');
+  bluffOrder = shuffle([...bluffDone]);
+  bluffIdx = 0; bluffVotes = {}; bluffRevealed = false; bluffResults = [];
+  document.getElementById('bluff-submit-view').style.display='none';
+  document.getElementById('bluff-vote-view').style.display='block';
+  document.getElementById('bluff-done-view').style.display='none';
+  document.getElementById('bluff-vote-panel').style.display='inline';
+  renderBluffVoteRound();
+}
+
+function renderBluffVoteRound() {
+  if (bluffIdx >= bluffOrder.length) {
+    showBluffLeaderboard();
+    return;
+  }
+  const pid = bluffOrder[bluffIdx];
+  const b = bluffs[pid];
+  const pname = players.find(p=>p.id===pid)?.name||'?';
+  document.getElementById('bluff-player').textContent = pname;
+  document.getElementById('bluff-stmts').innerHTML = b.shuffled.map((s,i) =>
+    `<div class="bluff-stmt" id="bluff-card-${i}"><div class="tag">${['A','B','C'][i]}</div>${esc(s.text)}</div>`).join('');
+  document.getElementById('bluff-dots').innerHTML = bluffOrder.map((_,i) =>
+    `<div class="guess-dot${i<bluffIdx?' done':''}${i===bluffIdx?' cur':''}"></div>`).join('');
+  document.getElementById('btn-next-bluff').style.display='none';
+  bluffVotes = {};
+  bluffRevealed = false;
+}
+
+function castBluffVote() {
+  const idx = parseInt(document.getElementById('bluff-vote-select').value);
+  if (isNaN(idx)) return toast('请选择一个选项');
+  bluffVotes['host'] = idx;
+  toast('投票成功！');
+}
+
+function revealBluffAnswer() {
+  const pid = bluffOrder[bluffIdx];
+  const b = bluffs[pid];
+  const truthIdx = b.shuffled.findIndex(s=>s.isTruth);
+  let fooled = 0;
+  const totalVotes = Object.keys(bluffVotes).length;
+  for (const v of Object.values(bluffVotes)) { if (v !== truthIdx) fooled++; }
+  bluffResults.push({ name:players.find(p=>p.id===pid)?.name||'?', fooled, totalVotes });
+  bluffRevealed = true;
+
+  b.shuffled.forEach((s,i) => {
+    const el = document.getElementById(`bluff-card-${i}`);
+    if (el) el.classList.add(s.isTruth?'truth':'lie');
+  });
+  document.getElementById('btn-next-bluff').style.display='inline-block';
+}
+
+function nextBluffRound() {
+  bluffIdx++;
+  renderBluffVoteRound();
+}
+
+function showBluffLeaderboard() {
+  document.getElementById('bluff-submit-view').style.display='none';
+  document.getElementById('bluff-vote-view').style.display='none';
+  document.getElementById('bluff-done-view').style.display='block';
+  document.getElementById('bluff-vote-panel').style.display='none';
+  const sorted = [...bluffResults].sort((a,b)=>b.fooled - a.fooled);
+  const emojis = ['🥇','🥈','🥉'];
+  document.getElementById('bluff-lb').innerHTML = sorted.map((r,i) =>
+    `<div class="lb-item${i===0?' win':''}">
+      <div class="lb-rank">${emojis[i]||'👏'}</div>
+      <div style="flex:1;text-align:left;"><strong>${esc(r.name)}</strong><div style="font-size:.85rem;color:var(--gray);">骗过了 ${r.fooled}/${r.totalVotes} 人</div></div>
+    </div>`).join('');
+  if (sorted.length>0) confetti();
+}
+
+// ═══════════════════════════════════════
+//  PHOTO
+// ═══════════════════════════════════════
+function renderMosaic() {
+  document.getElementById('mosaic').innerHTML = Object.entries(cards).map(([pid,c],i) => {
+    const p = players.find(x=>x.id===pid);
+    return `<div class="m-card" style="animation-delay:${i*.1}s">
+      <div class="m-n">${esc(p?.name||'神秘人')}</div>
+      <div class="m-g">🎂 ${esc(c.gen)}</div>
+      <div class="m-t" style="--c:'❄️'">${esc(c.fact)}</div>
+      <div class="m-t" style="--c:'⭐'">${esc(c.event)}</div>
+    </div>`;
+  }).join('') || '<p style="color:var(--gray);">暂无卡片</p>';
+}
+
+// ═══════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════
+function shuffle(a) { const r=[...a]; for(let i=r.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[r[i],r[j]]=[r[j],r[i]];} return r; }
+function esc(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML;}
+function escAttr(s){return(s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+function toast(m){const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),2500);}
+function confetti(){
+  const colors=['#C41E3A','#D4A574','#FFD700','#FF6B6B','#4CAF50','#2196F3','#FF9800','#9C27B0'];
+  for(let i=0;i<60;i++) setTimeout(()=>{
+    const p=document.createElement('div');p.className='confetti';
+    p.style.left=Math.random()*100+'%';p.style.background=colors[Math.floor(Math.random()*colors.length)];
+    p.style.width=(Math.random()*12+6)+'px';p.style.height=(Math.random()*12+6)+'px';
+    p.style.borderRadius=Math.random()>.5?'50%':'2px';p.style.animationDuration=(Math.random()*2+2)+'s';
+    document.body.appendChild(p);setTimeout(()=>p.remove(),3500);
+  },i*30);
+}
+
+// ═══════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════
+switchPhase('LOBBY');
+document.getElementById('player-count-display').textContent = '0';
+</script>
+</body>
+</html>

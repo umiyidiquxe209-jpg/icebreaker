@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>贾门专属 Icebreaker</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--red:#C41E3A;--red-dark:#9B1B30;--gold:#D4A574;--gold-light:#F5E6D3;--cream:#FFF8F0;--dark:#2C1810;--gray:#8B7E74;--white:#FFF;--shadow:0 4px 20px rgba(44,24,16,.12);--shadow-lg:0 8px 40px rgba(44,24,16,.2);--radius:16px;--radius-sm:10px}
+html{font-size:16px}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--cream);color:var(--dark);min-height:100dvh;overflow-x:hidden}
+.hidden{display:none!important}
+button{font-family:inherit;cursor:pointer;border:none;border-radius:var(--radius-sm);padding:12px 28px;font-size:1rem;font-weight:600;transition:all .2s}
+button:active{transform:scale(.96)}
+.btn-r{background:var(--red);color:#fff;box-shadow:0 4px 15px rgba(196,30,58,.3)}
+.btn-r:hover{background:var(--red-dark)}
+.btn-o{background:#fff;color:var(--red);border:2px solid var(--red)}
+.btn-o:hover{background:#FFF0F3}
+.btn-g{background:linear-gradient(135deg,#D4A574,#C4956A);color:#fff;box-shadow:0 4px 15px rgba(212,165,116,.4)}
+.btn-sm{padding:6px 16px;font-size:.8rem}
+input,textarea,select{font-family:inherit;font-size:1rem;border:2px solid #E8DDD4;border-radius:var(--radius-sm);padding:12px 16px;background:#fff;transition:border-color .2s;width:100%}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(212,165,116,.15)}
+.card{background:#fff;border-radius:var(--radius);padding:24px 20px;box-shadow:var(--shadow);margin-bottom:16px}
+.progress-bar{height:20px;background:#EEE;border-radius:10px;overflow:hidden;margin:12px auto;max-width:500px}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--red));border-radius:10px;transition:width .5s}
+.player-tags{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:16px 0}
+.player-tag{background:#fff;padding:10px 18px;border-radius:30px;font-size:1rem;font-weight:600;box-shadow:var(--shadow);animation:fadeUp .3s ease}
+.guess-dots{display:flex;gap:8px;justify-content:center;margin:12px 0}
+.guess-dot{width:12px;height:12px;border-radius:50%;background:#DDD;transition:.3s}
+.guess-dot.done{background:#4CAF50}
+.guess-dot.cur{background:var(--red);transform:scale(1.4)}
+.bluff-stmt{background:#fff;border-radius:var(--radius-sm);padding:20px 16px;font-size:1.1rem;font-weight:700;box-shadow:var(--shadow);border:3px solid transparent;transition:.4s;position:relative;margin-bottom:12px;cursor:pointer;text-align:left}
+.bluff-stmt .tag{position:absolute;top:-14px;left:14px;background:var(--red);color:#fff;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:900}
+.bluff-stmt:hover{border-color:var(--red)}
+.bluff-stmt.sel{border-color:var(--red);background:#FFF0F3}
+.bluff-stmt.truth{border-color:#4CAF50;background:#F0FFF0}
+.bluff-stmt.lie{border-color:#E0E0E0;opacity:.6}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:100;animation:fadeIn .3s}
+.overlay-card{background:#fff;border-radius:var(--radius);padding:44px;text-align:center;max-width:480px;box-shadow:var(--shadow-lg);animation:popIn .4s cubic-bezier(.175,.885,.32,1.275)}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--dark);color:#fff;padding:12px 24px;border-radius:30px;font-weight:600;z-index:300;animation:fadeUp .3s ease;box-shadow:var(--shadow-lg)}
+.lb-item{display:flex;align-items:center;gap:12px;background:#fff;padding:14px 20px;border-radius:var(--radius-sm);margin-bottom:8px;box-shadow:var(--shadow)}
+.lb-item.win{background:linear-gradient(135deg,#FFF9E6,#FFE0B2);border:2px solid var(--gold)}
+.confetti{position:fixed;width:10px;height:10px;top:-20px;z-index:200;animation:cf 3s ease forwards;pointer-events:none}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes popIn{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
+@keyframes cf{0%{transform:translateY(-100px) rotate(0);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(76,175,80,.4)}50%{box-shadow:0 0 0 15px rgba(76,175,80,0)}}
+
+/* HOST VIEW */
+#host-view{max-width:1100px;margin:0 auto;padding:28px 36px;min-height:100dvh}
+.host-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:14px;border-bottom:2px solid var(--gold-light)}
+.host-hdr h1{font-size:2rem;background:linear-gradient(135deg,var(--red),var(--red-dark));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.host-nav{display:flex;gap:10px;align-items:center;margin-bottom:20px;flex-wrap:wrap}
+.guess-card{background:#fff;border-radius:var(--radius);padding:32px 24px;margin:16px auto;max-width:650px;box-shadow:var(--shadow-lg)}
+.guess-card .g-name{font-size:2.5rem;font-weight:900;color:var(--red);margin-bottom:16px}
+.guess-card .g-item{background:var(--gold-light);padding:18px 20px;border-radius:var(--radius-sm);border-left:4px solid var(--gold);margin-bottom:10px}
+.guess-card .g-item .gl{font-size:.8rem;color:var(--gray);margin-bottom:4px}
+.guess-card .g-item .gv{font-size:1.2rem;font-weight:700}
+.card-mosaic{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin:24px 0}
+.m-card{background:#fff;border-radius:var(--radius-sm);padding:16px;width:220px;box-shadow:var(--shadow);text-align:left;border-top:4px solid var(--red);animation:fadeUp .5s ease both}
+.m-card .mn{font-size:.8rem;color:var(--gray)}
+.m-card .mg{font-size:1rem;font-weight:700;color:var(--red);margin-bottom:4px}
+
+/* PLAYER VIEW */
+#player-view{max-width:460px;margin:0 auto;padding:20px 16px;min-height:100dvh}
+.player-hdr{text-align:center;padding:12px 0;margin-bottom:16px}
+.player-hdr h1{font-size:1.5rem;background:linear-gradient(135deg,var(--red),var(--red-dark));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.player-hdr .sb{font-size:.85rem;color:var(--gray)}
+
+@media(max-width:768px){#host-view{padding:12px}.host-hdr h1{font-size:1.4rem}.guess-card .g-name{font-size:1.8rem}}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ HOST ═══════════ -->
+<div id="host-view" class="hidden">
+  <div class="host-hdr"><h1>🎬 贾门专属 Icebreaker</h1><span id="h-badge">🏠 等待加入</span></div>
+  <div class="host-nav">
+    <button class="btn-o btn-sm" onclick="hc('prev')" id="btn-prev" disabled>◀ 上一步</button>
+    <button class="btn-r" onclick="hc('next')" id="btn-next">开始填卡片 ▶</button>
+    <span style="margin-left:auto;font-weight:700;"><span id="h-count">0</span> 人</span>
+  </div>
+  <div id="h-lobby"><h2 style="font-size:2rem;text-align:center;margin-top:40px;">👋 等待同门加入...</h2><div class="player-tags" id="h-players"></div></div>
+  <div id="h-cards" class="hidden"><h2 style="text-align:center;font-size:1.6rem;margin-bottom:12px;">📝 填写身份卡</h2><div style="text-align:center;font-size:1.2rem;">已提交：<strong id="h-cdone">0</strong>/<span id="h-ctot">0</span></div><div class="progress-bar"><div class="progress-fill" id="h-cfill" style="width:0%"></div></div></div>
+  <div id="h-guess" class="hidden"><div class="guess-dots" id="h-gdots"></div><div class="guess-card"><div style="color:var(--gray);margin-bottom:4px;">🎯 轮到</div><div class="g-name" id="h-gname">---</div><div id="h-gitems"></div></div><div id="h-gresult"></div><button class="btn-r" onclick="hNextGuess()" id="h-gnext" style="display:none;margin-top:8px;">下一个 ▶</button></div>
+  <div id="h-bluff" class="hidden"><div id="h-bwait"><h2 style="font-size:1.6rem;text-align:center;margin-bottom:12px;">🎭 猜真假</h2><div style="text-align:center;font-size:1.2rem;">已提交：<strong id="h-bdone">0</strong>/<span id="h-btot">0</span></div><div class="progress-bar"><div class="progress-fill" id="h-bfill" style="width:0%"></div></div><button class="btn-r" onclick="hStartBluff()" style="display:block;margin:16px auto;">开始投票 ▶</button></div><div id="h-bvote" style="display:none;"><div class="guess-dots" id="h-bdots"></div><div style="text-align:center;font-size:1.1rem;">猜猜 <strong id="h-bpname" style="color:var(--red);"></strong> 的哪个是真的？</div><div id="h-bstmts" style="max-width:650px;margin:16px auto;"></div><div style="text-align:center;margin:8px 0;">已投票：<strong id="h-bvc">0</strong></div><button class="btn-g" onclick="hRevealBluff()">🔔 开奖</button><button class="btn-r" id="h-bnext" onclick="hNextBluff()" style="display:none;margin-top:8px;">下一个 ▶</button></div><div id="h-bdonev" style="display:none;"><h2 style="text-align:center;font-size:2rem;margin-bottom:16px;">🏆 贾门影帝奖</h2><div id="h-blb" style="max-width:460px;margin:0 auto;"></div></div></div>
+  <div id="h-photo" class="hidden"><h2 style="text-align:center;font-size:2rem;margin-bottom:8px;">📸 合影时刻！</h2><div class="card-mosaic" id="h-mosaic"></div><button class="btn-g" onclick="confetti()" style="display:block;margin:20px auto;font-size:1.2rem;padding:16px 40px;">🎉 撒花</button></div>
+</div>
+
+<!-- ═══════════ PLAYER ═══════════ -->
+<div id="player-view" class="hidden">
+  <div class="player-hdr"><h1>🎬 贾门专属 Icebreaker</h1><div class="sb" id="p-sub">师门破冰游戏</div></div>
+  <div id="p-join"><div style="text-align:center;font-size:3rem;margin:40px 0 16px;">👋</div><div style="text-align:center;font-size:1.2rem;margin-bottom:20px;">欢迎来到贾门聚会！</div><div class="card"><input type="text" id="p-name" placeholder="请输入你的名字" maxlength="20" autocomplete="off"><button class="btn-r" onclick="pJoin()" style="width:100%;margin-top:8px;">加入游戏</button></div><div id="p-err" style="color:var(--red);font-weight:600;text-align:center;"></div></div>
+  <div id="p-wait" class="hidden"><div style="text-align:center;font-size:4rem;margin-top:60px;">⏳</div><div style="text-align:center;font-size:1.2rem;color:var(--gray);margin-top:12px;" id="p-wmsg">等待主持人开始...</div></div>
+  <div id="p-card" class="hidden"><div style="text-align:center;margin-bottom:12px;"><span style="font-size:1.2rem;">📝 填写身份卡</span></div><div class="card"><div style="margin-bottom:12px;"><div style="font-weight:700;font-size:.9rem;">🎂 学术代际</div><input type="text" id="p-gen" placeholder="例如：2023级博士" maxlength="30"></div><div style="margin-bottom:12px;"><div style="font-weight:700;font-size:.9rem;">❄️ 冷知识</div><textarea id="p-fact" placeholder="越离谱越好！" maxlength="60"></textarea></div><div style="margin-bottom:12px;"><div style="font-weight:700;font-size:.9rem;">⭐ 标志事件</div><textarea id="p-event" placeholder="你在师门的经典事件" maxlength="60"></textarea></div><button class="btn-r" onclick="pSubmitCard()" style="width:100%;">提交 ✅</button></div></div>
+  <div id="p-guess" class="hidden"><div style="text-align:center;margin-bottom:12px;" id="p-gstatus">🔍</div><div class="card" id="p-gcard"></div><div class="card" id="p-gctrl"><div style="font-weight:700;margin-bottom:8px;">这张卡片的主人是谁？</div><select id="p-gsel"><option value="">-- 选名字 --</option></select><button class="btn-r" onclick="pGuess()" style="width:100%;margin-top:8px;">我猜就是TA 🎯</button><div id="p-gfb" style="margin-top:12px;text-align:center;"></div></div></div>
+  <div id="p-bluff-sub" class="hidden"><div style="text-align:center;margin-bottom:12px;"><span style="font-size:1.2rem;">🎭 编造假信息</span></div><div class="card"><p style="color:var(--gray);font-size:.9rem;margin-bottom:12px;">从你身份卡中选一条<strong>真实信息</strong>，再编<strong>两条假的</strong>。骗过所有人！</p><div style="margin-bottom:12px;"><div style="font-weight:700;font-size:.9rem;">✅ 真实信息</div><select id="p-btruth"><option value="">-- 选一条 --</option></select></div><div style="margin-bottom:12px;"><div style="font-weight:700;font-size:.9rem;">❌ 假信息①</div><textarea id="p-blie1" placeholder="编得像真的" maxlength="60"></textarea></div><div style="margin-bottom:12px;"><div style="font-weight:700;font-size:.9rem;">❌ 假信息②</div><textarea id="p-blie2" placeholder="越真越好" maxlength="60"></textarea></div><button class="btn-r" onclick="pSubmitBluff()" style="width:100%;">提交 ✅</button><div id="p-berr" style="color:var(--red);font-weight:600;margin-top:8px;"></div></div></div>
+  <div id="p-bluff-vote" class="hidden"><div style="text-align:center;margin-bottom:12px;"><span style="font-size:1.1rem;">🤔 <strong id="p-bvname"></strong> 的三条信息</span></div><div id="p-bopts"></div><div id="p-bvoted" style="display:none;text-align:center;color:var(--gray);margin-top:12px;">已投票，等待开奖...</div><div id="p-bresult" style="display:none;text-align:center;margin-top:12px;"></div></div>
+</div>
+
+<script src="https://unpkg.com/mqtt@5/dist/mqtt.min.js"></script>
+<script>
+// ═══════════════════════════════════════
+//  MQTT CONNECTION
+// ═══════════════════════════════════════
+const ROOM = 'jiamen-' + (new URLSearchParams(location.search).get('room') || 'default');
+const TOPIC = 'jiamen-icebreaker/' + ROOM;
+const isHost = new URLSearchParams(location.search).get('host') === '1';
+
+let client, myId, myName;
+
+function mqttConnect() {
+  client = mqtt.connect('wss://broker.emqx.io:8084/mqtt');
+  client.on('connect', () => {
+    client.subscribe(TOPIC + '/#');
+    console.log('MQTT connected, room:', ROOM);
+    if (isHost) { myId = 'host'; initHost(); }
+    else { initPlayer(); }
+  });
+  client.on('message', (topic, payload) => {
+    try {
+      const msg = JSON.parse(payload.toString());
+      const action = topic.replace(TOPIC + '/', '');
+      if (isHost) handleHostMsg(action, msg);
+      else handlePlayerMsg(action, msg);
+    } catch(e) {}
+  });
+}
+
+function publish(action, data) {
+  if (!client || !client.connected) return;
+  client.publish(TOPIC + '/' + action, JSON.stringify({ ...data, from: myId, ts: Date.now() }));
+}
+
+// ═══════════════════════════════════════
+//  GAME STATE (shared via MQTT)
+// ═══════════════════════════════════════
+let phase = 'LOBBY';
+let pnames = {};   // {id: name}
+let pids = [];     // ordered ids
+let cards = {};    // {id: {gen,fact,event}}
+let gorder = [], gassign = {}, gidx = 0, gresults = [];
+let bluffs = {}, bdone = new Set(), border = [], bidx = 0, bvotes = {}, brevealed = false, bresults = [];
+
+function getPlayerId(name) { for (const [k,v] of Object.entries(pnames)) if (v===name) return k; return null; }
+
+// ═══════════════════════════════════════
+//  HOST
+// ═══════════════════════════════════════
+function initHost() {
+  document.getElementById('host-view').classList.remove('hidden');
+  publish('host-hello', {});
+  updateHostUI();
+}
+
+function handleHostMsg(action, msg) {
+  switch(action) {
+    case 'player-join': pnames[msg.id] = msg.name; pids.push(msg.id); renderHostPlayers(); break;
+    case 'card-submit':
+      cards[msg.id] = { gen:msg.gen, fact:msg.fact, event:msg.event };
+      renderHostCardProgress();
+      break;
+    case 'bluff-submit': bdone.add(msg.id); bluffs[msg.id] = msg.bluff; renderHostBluffProgress(); break;
+    case 'bluff-vote': bvotes[msg.from] = msg.idx; document.getElementById('h-bvc').textContent = Object.keys(bvotes).length; break;
+  }
+}
+
+function updateHostUI() { renderHostPlayers(); }
+
+function renderHostPlayers() {
+  document.getElementById('h-count').textContent = pids.length;
+  document.getElementById('h-players').innerHTML = pids.map(id =>
+    `<div class="player-tag">${esc(pnames[id])}</div>`).join('') || '<div style="color:var(--gray);text-align:center;">还没有人加入...</div>';
+}
+
+function renderHostCardProgress() {
+  const done = Object.keys(cards).length;
+  document.getElementById('h-cdone').textContent = done;
+  document.getElementById('h-ctot').textContent = pids.length;
+  document.getElementById('h-cfill').style.width = (pids.length>0?done/pids.length*100:0)+'%';
+}
+
+function renderHostBluffProgress() {
+  document.getElementById('h-bdone').textContent = bdone.size;
+  document.getElementById('h-btot').textContent = pids.length;
+  document.getElementById('h-bfill').style.width = (pids.length>0?bdone.size/pids.length*100:0)+'%';
+}
+
+function hc(dir) {
+  const PH = ['LOBBY','CARDS','GUESS','BLUFF','PHOTO'];
+  const BADGES = {LOBBY:'🏠 等待加入',CARDS:'📝 填写卡片',GUESS:'🔍 竞猜',BLUFF:'🎭 猜真假',PHOTO:'📸 合影'};
+  const NEXT = {LOBBY:'开始填卡片 ▶',CARDS:'开始竞猜 ▶',GUESS:'开始猜真假 ▶',BLUFF:'合影留念 ▶'};
+  let idx = PH.indexOf(phase);
+  if (dir==='next' && idx<PH.length-1) idx++; else if (dir==='prev' && idx>0) idx--;
+  phase = PH[idx];
+  document.getElementById('h-badge').textContent = BADGES[phase];
+  ['h-lobby','h-cards','h-guess','h-bluff','h-photo'].forEach(id => document.getElementById(id).classList.add('hidden'));
+  document.getElementById('h-'+{LOBBY:'lobby',CARDS:'cards',GUESS:'guess',BLUFF:'bluff',PHOTO:'photo'}[phase]).classList.remove('hidden');
+  document.getElementById('btn-prev').disabled = idx<=0;
+  const nb = document.getElementById('btn-next');
+  if (idx>=PH.length-1){nb.textContent='已是最后阶段';nb.disabled=true;}else{nb.textContent=NEXT[phase];nb.disabled=false;}
+
+  if (phase==='GUESS') hSetupGuess();
+  if (phase==='BLUFF') { bdone=new Set(); bluffs={}; border=[]; bidx=0; bvotes={}; brevealed=false; bresults=[]; document.getElementById('h-bwait').style.display='block'; document.getElementById('h-bvote').style.display='none'; document.getElementById('h-bdonev').style.display='none'; }
+  if (phase==='PHOTO') renderMosaic();
+  publish('phase', { phase });
+}
+
+function hSetupGuess() {
+  const ids = pids.filter(id => cards[id]);
+  if (ids.length<2) return toast('至少需要2人填卡');
+  let a; do { a = shuffle([...ids]); } while (ids.length>1 && a.some((x,i)=>x===ids[i]));
+  gorder = shuffle([...ids]); gassign = {}; ids.forEach((id,i)=>{gassign[id]=a[i];}); gidx = 0; gresults = [];
+  publish('guess-setup', { gorder, gassign });
+  hRenderGuess();
+}
+
+function hRenderGuess() {
+  if (gidx >= gorder.length) {
+    document.getElementById('h-gname').textContent='全部猜完！';
+    document.getElementById('h-gitems').innerHTML='<p style="color:var(--gray);text-align:center;">进入下一阶段~</p>';
+    document.getElementById('h-gnext').style.display='none';
+    return;
+  }
+  const gid = gorder[gidx], oid = gassign[gid];
+  document.getElementById('h-gname').textContent = pnames[gid]||'?';
+  const c = cards[oid];
+  document.getElementById('h-gitems').innerHTML = c ? `
+    <div class="g-item"><div class="gl">🎂 学术代际</div><div class="gv">${esc(c.gen)}</div></div>
+    <div class="g-item"><div class="gl">❄️ 冷知识</div><div class="gv">${esc(c.fact)}</div></div>
+    <div class="g-item"><div class="gl">⭐ 标志事件</div><div class="gv">${esc(c.event)}</div></div>`:'';
+  document.getElementById('h-gnext').style.display='none';
+  document.getElementById('h-gresult').innerHTML='';
+  document.getElementById('h-gdots').innerHTML = gorder.map((_,i)=>`<div class="guess-dot${i<gidx?' done':''}${i===gidx?' cur':''}"></div>`).join('');
+  publish('guess-turn', { gidx, gid, card: c || null, pnames: Object.fromEntries(pids.map(id=>[id,pnames[id]])) });
+}
+
+function hNextGuess() { gidx++; hRenderGuess(); }
+
+function hStartBluff() {
+  border = shuffle([...bdone]); bidx=0; bvotes={}; brevealed=false; bresults=[];
+  document.getElementById('h-bwait').style.display='none';
+  document.getElementById('h-bvote').style.display='block';
+  document.getElementById('h-bdonev').style.display='none';
+  publish('bluff-start', { border });
+  hRenderBluff();
+}
+
+function hRenderBluff() {
+  if (bidx >= border.length) { hShowBluffLB(); return; }
+  const pid = border[bidx], b = bluffs[pid];
+  document.getElementById('h-bpname').textContent = pnames[pid]||'?';
+  document.getElementById('h-bstmts').innerHTML = b.shuffled.map((s,i)=>
+    `<div class="bluff-stmt" id="hbc-${i}"><div class="tag">${['A','B','C'][i]}</div>${esc(s.text)}</div>`).join('');
+  document.getElementById('h-bvc').textContent = '0';
+  document.getElementById('h-bdots').innerHTML = border.map((_,i)=>`<div class="guess-dot${i<bidx?' done':''}${i===bidx?' cur':''}"></div>`).join('');
+  document.getElementById('h-bnext').style.display='none';
+  bvotes = {};
+  publish('bluff-turn', { bidx, pid, stmts: b.shuffled });
+}
+
+function hRevealBluff() {
+  const b = bluffs[border[bidx]], ti = b.shuffled.findIndex(s=>s.isTruth);
+  let fooled=0; const tv=Object.keys(bvotes).length;
+  for (const v of Object.values(bvotes)) { if (v!==ti) fooled++; }
+  bresults.push({ name:pnames[border[bidx]], fooled, tv });
+  document.getElementById('h-bnext').style.display='inline-block';
+  b.shuffled.forEach((s,i)=>{const el=document.getElementById('hbc-'+i);if(el)el.classList.add(s.isTruth?'truth':'lie');});
+  document.getElementById('h-bvc').textContent = `${tv} 票，${fooled} 人被骗 🤯`;
+  publish('bluff-reveal', { ti, fooled, tv });
+}
+
+function hNextBluff() { bidx++; hRenderBluff(); }
+
+function hShowBluffLB() {
+  document.getElementById('h-bvote').style.display='none';
+  document.getElementById('h-bdonev').style.display='block';
+  const s = [...bresults].sort((a,b)=>b.fooled-a.fooled);
+  document.getElementById('h-blb').innerHTML = s.map((r,i)=>
+    `<div class="lb-item${i===0?' win':''}"><span style="font-size:1.4rem;font-weight:900;width:36px;">${['🥇','🥈','🥉'][i]||'👏'}</span><div><strong>${esc(r.name)}</strong><br><span style="font-size:.85rem;color:var(--gray);">骗过 ${r.fooled}/${r.tv} 人</span></div></div>`).join('');
+  if(s.length) confetti();
+  publish('bluff-done', { results: s });
+}
+
+function renderMosaic() {
+  document.getElementById('h-mosaic').innerHTML = Object.entries(cards).map(([id,c],i)=>
+    `<div class="m-card" style="animation-delay:${i*.1}s"><div class="mn">${esc(pnames[id]||'?')}</div><div class="mg">🎂 ${esc(c.gen)}</div><div style="font-size:.85rem;">❄️ ${esc(c.fact)}</div><div style="font-size:.85rem;">⭐ ${esc(c.event)}</div></div>`).join('');
+}
+
+// ═══════════════════════════════════════
+//  PLAYER
+// ═══════════════════════════════════════
+function initPlayer() {
+  document.getElementById('player-view').classList.remove('hidden');
+  const savedId = sessionStorage.getItem('mqtt-pid');
+  if (savedId && sessionStorage.getItem('mqtt-name')) {
+    myId = savedId; myName = sessionStorage.getItem('mqtt-name');
+    publish('player-rejoin', { id: myId, name: myName });
+  }
+}
+
+function handlePlayerMsg(action, msg) {
+  switch(action) {
+    case 'host-hello': if (myId) publish('player-rejoin', { id: myId, name: myName }); break;
+    case 'phase': setPPhase(msg.phase); break;
+    case 'guess-setup': gorder=msg.gorder; gassign=msg.gassign; break;
+    case 'guess-turn':
+      gidx = msg.gidx;
+      const card = msg.card;
+      const names = msg.pnames || {};
+      document.getElementById('p-gcard').innerHTML = card ? `
+        <div class="g-item"><div class="gl">🎂</div><div class="gv">${esc(card.gen)}</div></div>
+        <div class="g-item"><div class="gl">❄️</div><div class="gv">${esc(card.fact)}</div></div>
+        <div class="g-item"><div class="gl">⭐</div><div class="gv">${esc(card.event)}</div></div>` : '';
+      document.getElementById('p-gsel').innerHTML = '<option value="">-- 选名字 --</option>' +
+        Object.entries(names).filter(([id])=>id!==myId).map(([id,n])=>`<option value="${id}">${esc(n)}</option>`).join('');
+      document.getElementById('p-gctrl').classList.toggle('hidden', msg.gid !== myId);
+      document.getElementById('p-gstatus').innerHTML = msg.gid===myId
+        ? '<span style="font-size:1.1rem;color:var(--red);font-weight:700;">🎯 轮到你猜了！</span>'
+        : `<span>轮到 <strong>${esc(names[msg.gid]||'?')}</strong> 猜</span>`;
+      document.getElementById('p-gfb').innerHTML = '';
+      break;
+    case 'bluff-start': border=msg.border; break;
+    case 'bluff-turn':
+      document.getElementById('p-bvname').textContent = pnames[msg.pid]||'?';
+      document.getElementById('p-bopts').innerHTML = msg.stmts.map((s,i)=>
+        `<div class="bluff-stmt" onclick="${msg.pid!==myId?'pVoteBluff('+i+')':''}" id="pbo-${i}"><div class="tag">${['A','B','C'][i]}</div>${esc(s.text)}</div>`).join('');
+      document.getElementById('p-bvoted').style.display = msg.pid===myId?'block':'none';
+      document.getElementById('p-bresult').style.display='none';
+      break;
+    case 'bluff-reveal':
+      document.getElementById('p-bvoted').style.display='none';
+      document.getElementById('p-bresult').style.display='block';
+      document.getElementById('p-bresult').innerHTML = `<div style="font-size:1.2rem;">✅ 正确答案：<span style="color:#4CAF50;">${['A','B','C'][msg.ti]}</span></div><div style="color:var(--gray);">${msg.tv} 票，${msg.fooled} 人被骗</div>`;
+      break;
+    case 'bluff-done':
+      document.getElementById('p-bresult').style.display='block';
+      document.getElementById('p-bresult').innerHTML = '<div style="font-size:1.5rem;font-weight:900;">🏆 贾门影帝奖</div>' +
+        msg.results.slice(0,3).map((r,i)=>`<div>${['🥇','🥈','🥉'][i]} ${esc(r.name)} — 骗过 ${r.fooled} 人</div>`).join('');
+      if(msg.results[0]) confetti();
+      break;
+  }
+}
+
+function setPPhase(p) {
+  phase = p;
+  const SUBS = {LOBBY:'师门破冰游戏',CARDS:'填写身份卡',GUESS:'竞猜环节',BLUFF:'🎭 猜真假',PHOTO:'📸 合影'};
+  document.getElementById('p-sub').textContent = SUBS[p]||'';
+  document.getElementById('p-join').classList.toggle('hidden', p!=='LOBBY'||!!myId);
+  document.getElementById('p-wait').classList.toggle('hidden', p!=='LOBBY'||!myId);
+  document.getElementById('p-card').classList.toggle('hidden', p!=='CARDS');
+  document.getElementById('p-guess').classList.toggle('hidden', p!=='GUESS');
+  document.getElementById('p-bluff-sub').classList.toggle('hidden', p!=='BLUFF'||bdone.has(myId));
+  document.getElementById('p-bluff-vote').classList.toggle('hidden', p!=='BLUFF'||!border.length);
+  if (p==='LOBBY'&&myId) { document.getElementById('p-wait').classList.remove('hidden'); document.getElementById('p-wmsg').textContent = `你好，${myName}！等主持人开始...`; }
+  if (p==='BLUFF'&&!bdone.has(myId)) setupBluffForm();
+}
+
+function pJoin() {
+  const name = document.getElementById('p-name').value.trim();
+  if (!name) { document.getElementById('p-err').textContent='请输入名字'; return; }
+  myId = 'p'+Math.random().toString(36).slice(2,10);
+  myName = name;
+  sessionStorage.setItem('mqtt-pid', myId);
+  sessionStorage.setItem('mqtt-name', myName);
+  pnames[myId] = name;
+  document.getElementById('p-err').textContent='';
+  setPPhase('LOBBY');
+  publish('player-join', { id:myId, name });
+}
+
+function pSubmitCard() {
+  const gen=document.getElementById('p-gen').value.trim(), fact=document.getElementById('p-fact').value.trim(), event=document.getElementById('p-event').value.trim();
+  if(!gen||!fact||!event) return toast('请填写全部三项');
+  cards[myId] = {gen,fact,event};
+  publish('card-submit', { id:myId, gen, fact, event });
+  document.getElementById('p-card').classList.add('hidden');
+  document.getElementById('p-wait').classList.remove('hidden');
+  document.getElementById('p-wmsg').textContent = '卡片已提交！等竞猜开始...';
+}
+
+function pGuess() {
+  const tid = document.getElementById('p-gsel').value;
+  if (!tid) return toast('请选一个人');
+  const correct = tid === gassign[myId];
+  document.getElementById('p-gfb').innerHTML = correct
+    ? '<div style="font-size:1.3rem;color:#4CAF50;">🎉 猜对了！</div>'
+    : `<div style="color:#FF9800;">😅 错了！是 <strong>${esc(pnames[gassign[myId]]||'?')}</strong></div>`;
+  document.getElementById('p-gctrl').classList.add('hidden');
+  if (correct) confetti();
+}
+
+function setupBluffForm() {
+  const sel = document.getElementById('p-btruth');
+  sel.innerHTML = '<option value="">-- 选一条 --</option>';
+  if (cards[myId]) {
+    const c = cards[myId];
+    sel.innerHTML += `<option value="${escAttr(c.gen)}">🎂 ${esc(c.gen)}</option>
+      <option value="${escAttr(c.fact)}">❄️ ${esc(c.fact)}</option>
+      <option value="${escAttr(c.event)}">⭐ ${esc(c.event)}</option>`;
+  }
+}
+
+function pSubmitBluff() {
+  const truth=document.getElementById('p-btruth').value, lie1=document.getElementById('p-blie1').value.trim(), lie2=document.getElementById('p-blie2').value.trim();
+  if(!truth||!lie1||!lie2) { document.getElementById('p-berr').textContent='请全部填写'; return; }
+  if(truth===lie1||truth===lie2||lie1===lie2) { document.getElementById('p-berr').textContent='三条不能相同'; return; }
+  const shuffled = shuffle([{text:truth,isTruth:true},{text:lie1,isTruth:false},{text:lie2,isTruth:false}]);
+  bluffs[myId] = {truth,lie1,lie2,shuffled}; bdone.add(myId);
+  publish('bluff-submit', { id:myId, bluff: {truth,lie1,lie2,shuffled} });
+  document.getElementById('p-bluff-sub').classList.add('hidden');
+  document.getElementById('p-berr').textContent='';
+  toast('提交成功！');
+}
+
+function pVoteBluff(idx) {
+  document.querySelectorAll('#p-bopts .bluff-stmt').forEach((el,i)=>{el.classList.toggle('sel',i===idx);});
+  publish('bluff-vote', { idx });
+  document.getElementById('p-bvoted').style.display='block';
+}
+
+// ═══════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════
+function shuffle(a){const r=[...a];for(let i=r.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[r[i],r[j]]=[r[j],r[i]];}return r;}
+function esc(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML;}
+function escAttr(s){return(s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+function toast(m){const t=document.createElement('div');t.className='toast';t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),2500);}
+function confetti(){const c=['#C41E3A','#D4A574','#FFD700','#FF6B6B','#4CAF50','#2196F3'];for(let i=0;i<50;i++)setTimeout(()=>{const p=document.createElement('div');p.className='confetti';p.style.left=Math.random()*100+'%';p.style.background=c[Math.floor(Math.random()*c.length)];p.style.width=(Math.random()*12+6)+'px';p.style.height=(Math.random()*12+6)+'px';p.style.animationDuration=(Math.random()*2+2)+'s';document.body.appendChild(p);setTimeout(()=>p.remove(),3500);},i*30);}
+
+// ═══════════════════════════════════════
+//  START
+// ═══════════════════════════════════════
+mqttConnect();
+</script>
+</body>
+</html>

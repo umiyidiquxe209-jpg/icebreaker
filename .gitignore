@@ -1,0 +1,6 @@
+node_modules/
+.claude/
+*.bak
+.tunnel_url.txt
+.DS_Store
+Thumbs.db

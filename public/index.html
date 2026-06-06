@@ -1,0 +1,1671 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>贾门专属 Icebreaker</title>
+<style>
+/* ═══════════════════════════════════════ */
+/*  RESET & BASE                         */
+/* ═══════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --red: #C41E3A;
+  --red-dark: #9B1B30;
+  --gold: #D4A574;
+  --gold-light: #F5E6D3;
+  --cream: #FFF8F0;
+  --dark: #2C1810;
+  --gray: #8B7E74;
+  --white: #FFFFFF;
+  --shadow: 0 4px 20px rgba(44, 24, 16, 0.12);
+  --shadow-lg: 0 8px 40px rgba(44, 24, 16, 0.2);
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+
+html { font-size: 16px; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif;
+  background: var(--cream);
+  color: var(--dark);
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+.hidden { display: none !important; }
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 12px 28px;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+button:active { transform: scale(0.96); }
+
+.btn-primary {
+  background: var(--red);
+  color: white;
+  box-shadow: 0 4px 15px rgba(196, 30, 58, 0.3);
+}
+.btn-primary:hover { background: var(--red-dark); transform: translateY(-1px); }
+
+.btn-outline {
+  background: white;
+  color: var(--red);
+  border: 2px solid var(--red);
+}
+.btn-outline:hover { background: #FFF0F3; }
+
+.btn-gold {
+  background: linear-gradient(135deg, #D4A574, #C4956A);
+  color: white;
+  box-shadow: 0 4px 15px rgba(212, 165, 116, 0.4);
+}
+
+input, textarea {
+  font-family: inherit;
+  font-size: 1rem;
+  border: 2px solid #E8DDD4;
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  background: white;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+input:focus, textarea:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.15);
+}
+
+/* ═══════════════════════════════════════ */
+/*  HOST VIEW                            */
+/* ═══════════════════════════════════════ */
+#host-view {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 40px;
+  min-height: 100dvh;
+}
+
+.host-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid var(--gold-light);
+}
+.host-header h1 {
+  font-size: 2.4rem;
+  background: linear-gradient(135deg, var(--red), var(--red-dark));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.host-header .room-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1.1rem;
+}
+.host-header .room-code {
+  background: var(--dark);
+  color: var(--gold);
+  padding: 8px 20px;
+  border-radius: 30px;
+  font-size: 1.6rem;
+  font-weight: 900;
+  letter-spacing: 4px;
+}
+.host-phase-badge {
+  background: var(--gold-light);
+  color: var(--dark);
+  padding: 6px 18px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.host-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+/* Lobby */
+#host-lobby { text-align: center; padding-top: 40px; }
+#host-lobby .join-url-box {
+  background: white;
+  border-radius: var(--radius);
+  padding: 32px;
+  margin: 32px auto;
+  max-width: 600px;
+  box-shadow: var(--shadow-lg);
+}
+#host-lobby .join-url {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--red);
+  letter-spacing: 1px;
+  word-break: break-all;
+}
+#host-lobby .join-label {
+  font-size: 1.1rem;
+  color: var(--gray);
+  margin-bottom: 12px;
+}
+#host-lobby .qr-container {
+  margin: 20px auto;
+  width: 200px; height: 200px;
+  background: white;
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--shadow);
+}
+#host-lobby .players-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin: 20px auto;
+  max-width: 700px;
+}
+.player-chip {
+  background: white;
+  padding: 10px 20px;
+  border-radius: 30px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  box-shadow: var(--shadow);
+  animation: fadeInUp 0.3s ease;
+  display: flex; align-items: center; gap: 8px;
+}
+.player-chip .dot { width: 10px; height: 10px; border-radius: 50%; background: #4CAF50; }
+
+/* Cards Phase */
+#host-cards { text-align: center; padding-top: 20px; }
+#host-cards .progress-container {
+  max-width: 500px;
+  margin: 40px auto;
+}
+#host-cards .progress-bar {
+  height: 24px;
+  background: #EEE;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+#host-cards .progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold), var(--red));
+  border-radius: 12px;
+  transition: width 0.5s ease;
+}
+#host-cards .card-preview-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 20px;
+}
+.card-preview-chip {
+  background: white;
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-size: 0.95rem;
+  box-shadow: var(--shadow);
+  display: flex; align-items: center; gap: 6px;
+}
+.card-preview-chip.done { border: 2px solid #4CAF50; }
+.card-preview-chip .check { color: #4CAF50; font-weight: bold; }
+
+/* Guess Phase */
+#host-guess { text-align: center; }
+#host-guess .current-turn {
+  background: white;
+  border-radius: var(--radius);
+  padding: 40px 32px;
+  margin: 24px auto;
+  max-width: 700px;
+  box-shadow: var(--shadow-lg);
+}
+#host-guess .turn-label {
+  font-size: 1.2rem;
+  color: var(--gray);
+  margin-bottom: 8px;
+}
+#host-guess .turn-name {
+  font-size: 3rem;
+  font-weight: 900;
+  color: var(--red);
+  margin-bottom: 24px;
+}
+#host-guess .card-display {
+  display: grid;
+  gap: 16px;
+  text-align: left;
+}
+#host-guess .card-item {
+  background: var(--gold-light);
+  padding: 20px 24px;
+  border-radius: var(--radius-sm);
+  border-left: 4px solid var(--gold);
+}
+#host-guess .card-item .label {
+  font-size: 0.85rem;
+  color: var(--gray);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+#host-guess .card-item .value {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+#host-guess .guess-result-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100;
+  animation: fadeIn 0.3s ease;
+}
+#host-guess .guess-result-card {
+  background: white;
+  border-radius: var(--radius);
+  padding: 48px;
+  text-align: center;
+  max-width: 500px;
+  box-shadow: var(--shadow-lg);
+  animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+#host-guess .result-icon { font-size: 5rem; margin-bottom: 16px; }
+#host-guess .result-title { font-size: 2rem; font-weight: 900; margin-bottom: 12px; }
+
+#host-guess .progress-dots {
+  display: flex; gap: 8px; justify-content: center; margin: 16px 0;
+}
+#host-guess .progress-dot {
+  width: 12px; height: 12px; border-radius: 50%; background: #DDD;
+  transition: background 0.3s;
+}
+#host-guess .progress-dot.done { background: #4CAF50; }
+#host-guess .progress-dot.current { background: var(--red); transform: scale(1.4); }
+
+/* Bluff Phase — Host */
+#host-bluff { text-align: center; }
+#host-bluff .bluff-statement-card {
+  background: white;
+  border-radius: var(--radius-sm);
+  padding: 24px 20px;
+  box-shadow: var(--shadow);
+  font-size: 1.4rem;
+  font-weight: 700;
+  cursor: default;
+  transition: all 0.4s;
+  position: relative;
+  border: 3px solid transparent;
+  text-align: left;
+}
+#host-bluff .bluff-statement-card .stmt-label {
+  position: absolute;
+  top: -14px;
+  left: 16px;
+  background: var(--red);
+  color: white;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.9rem; font-weight: 900;
+}
+#host-bluff .bluff-statement-card.reveal-truth {
+  border-color: #4CAF50;
+  background: #F0FFF0;
+  animation: pulse 0.6s ease 3;
+}
+#host-bluff .bluff-statement-card.reveal-lie {
+  border-color: #E0E0E0;
+  opacity: 0.6;
+}
+#host-bluff .leaderboard-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: white;
+  padding: 14px 20px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+  box-shadow: var(--shadow);
+}
+#host-bluff .leaderboard-item.winner {
+  background: linear-gradient(135deg, #FFF9E6, #FFE0B2);
+  border: 2px solid var(--gold);
+}
+#host-bluff .leaderboard-rank {
+  font-size: 1.5rem;
+  font-weight: 900;
+  width: 40px;
+}
+/* Photo Phase */
+#host-photo { text-align: center; }
+#host-photo .card-mosaic {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: center;
+  margin: 32px 0;
+}
+#host-photo .mosaic-card {
+  background: white;
+  border-radius: var(--radius-sm);
+  padding: 20px;
+  width: 240px;
+  box-shadow: var(--shadow);
+  text-align: left;
+  border-top: 4px solid var(--red);
+  animation: fadeInUp 0.5s ease both;
+}
+#host-photo .mosaic-card .m-name {
+  font-size: 0.9rem;
+  color: var(--gray);
+}
+#host-photo .mosaic-card .m-gen {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--red);
+  margin-bottom: 8px;
+}
+#host-photo .mosaic-card .m-fact, .m-event {
+  font-size: 0.9rem;
+  margin-top: 6px;
+  padding-left: 16px;
+  position: relative;
+}
+#host-photo .mosaic-card .m-fact::before { content: '❄️'; position: absolute; left: 0; top: 0; font-size: 0.7rem; }
+#host-photo .mosaic-card .m-event::before { content: '⭐'; position: absolute; left: 0; top: 0; font-size: 0.7rem; }
+
+/* ═══════════════════════════════════════ */
+/*  PLAYER VIEW                          */
+/* ═══════════════════════════════════════ */
+#player-view {
+  max-width: 460px;
+  margin: 0 auto;
+  padding: 20px 16px;
+  min-height: 100dvh;
+}
+
+.player-header {
+  text-align: center;
+  padding: 16px 0;
+  margin-bottom: 20px;
+}
+.player-header h1 {
+  font-size: 1.6rem;
+  background: linear-gradient(135deg, var(--red), var(--red-dark));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.player-header .subtitle {
+  font-size: 0.85rem;
+  color: var(--gray);
+  margin-top: 4px;
+}
+
+.player-card {
+  background: white;
+  border-radius: var(--radius);
+  padding: 24px 20px;
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+}
+
+/* Join Form */
+#player-join { text-align: center; padding-top: 40px; }
+#player-join .join-icon { font-size: 4rem; margin-bottom: 16px; }
+#player-join .room-label { font-size: 0.9rem; color: var(--gray); margin-bottom: 4px; }
+#player-join .room-display {
+  font-size: 2.4rem;
+  font-weight: 900;
+  color: var(--red);
+  letter-spacing: 3px;
+  margin-bottom: 24px;
+}
+#player-join input { text-align: center; font-size: 1.2rem; margin-bottom: 12px; }
+
+/* Waiting */
+#player-waiting { text-align: center; padding-top: 60px; }
+#player-waiting .waiting-animation {
+  font-size: 5rem;
+  animation: bounce 1.5s ease infinite;
+}
+#player-waiting .waiting-text { font-size: 1.2rem; color: var(--gray); margin-top: 16px; }
+
+/* Card Form */
+#player-card-form textarea {
+  min-height: 60px;
+  resize: vertical;
+  margin-bottom: 8px;
+}
+#player-card-form .form-group { margin-bottom: 16px; }
+#player-card-form .form-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--dark);
+  margin-bottom: 6px;
+  display: flex; align-items: center; gap: 6px;
+}
+#player-card-form .form-label .emoji { font-size: 1.2rem; }
+#player-card-form .char-count { font-size: 0.75rem; color: var(--gray); text-align: right; }
+
+/* Guess Interface */
+#player-guess .current-card {
+  background: var(--gold-light);
+  border-radius: var(--radius-sm);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+#player-guess .current-card .cg-item { margin-bottom: 12px; }
+#player-guess .current-card .cg-label { font-size: 0.8rem; color: var(--gray); margin-bottom: 2px; }
+#player-guess .current-card .cg-value { font-size: 1.1rem; font-weight: 700; }
+#player-guess select {
+  width: 100%;
+  font-size: 1.1rem;
+  padding: 14px;
+  border: 2px solid #E8DDD4;
+  border-radius: var(--radius-sm);
+  background: white;
+  font-family: inherit;
+  margin-bottom: 12px;
+}
+
+/* Bluff — Player */
+#player-bluff-options .bluff-option {
+  background: white;
+  border-radius: var(--radius-sm);
+  padding: 18px 16px;
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  border: 3px solid #E8DDD4;
+  transition: all 0.2s;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+#player-bluff-options .bluff-option:active { transform: scale(0.97); }
+#player-bluff-options .bluff-option.selected {
+  border-color: var(--red);
+  background: #FFF0F3;
+}
+#player-bluff-options .bluff-option.reveal-truth {
+  border-color: #4CAF50;
+  background: #F0FFF0;
+}
+#player-bluff-options .bluff-option.reveal-lie {
+  border-color: #FF5252;
+  background: #FFF0F0;
+  opacity: 0.7;
+}
+
+/* ═══════════════════════════════════════ */
+/*  ANIMATIONS                           */
+/* ═══════════════════════════════════════ */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-15px); }
+}
+@keyframes confetti-fall {
+  0% { transform: translateY(-100px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(196, 30, 58, 0.4); }
+  50% { box-shadow: 0 0 0 15px rgba(196, 30, 58, 0); }
+}
+@keyframes slideDown {
+  from { opacity: 0; max-height: 0; }
+  to { opacity: 1; max-height: 300px; }
+}
+
+.confetti-piece {
+  position: fixed;
+  width: 12px;
+  height: 12px;
+  top: -20px;
+  z-index: 200;
+  animation: confetti-fall 3s ease forwards;
+  pointer-events: none;
+}
+
+.toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--dark);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 30px;
+  font-weight: 600;
+  z-index: 300;
+  animation: fadeInUp 0.3s ease;
+  box-shadow: var(--shadow-lg);
+}
+
+.penalty-box {
+  background: #FFF9E6;
+  border: 2px dashed var(--gold);
+  border-radius: var(--radius-sm);
+  padding: 16px 20px;
+  margin-top: 16px;
+  font-size: 1.1rem;
+  animation: popIn 0.3s ease;
+}
+
+/* ═══════════════════════════════════════ */
+/*  RESPONSIVE                           */
+/* ═══════════════════════════════════════ */
+@media (max-width: 768px) {
+  #host-view { padding: 16px; }
+  #host-view .host-header h1 { font-size: 1.6rem; }
+  #host-view .host-header .room-code { font-size: 1.2rem; }
+  #host-view #host-lobby .join-url { font-size: 1.3rem; }
+  #host-guess .turn-name { font-size: 2rem; }
+  #host-guess .card-item .value { font-size: 1.2rem; }
+  #host-bluff .bluff-statement-card { padding: 16px 12px; font-size: 1rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════ -->
+<!--  HOST VIEW                             -->
+<!-- ═══════════════════════════════════════ -->
+<div id="host-view" class="hidden">
+  <div class="host-header">
+    <h1>🎬 贾门专属 Icebreaker</h1>
+    <div class="room-info">
+      <span>房间码</span>
+      <span class="room-code" id="host-room-code">----</span>
+      <span class="host-phase-badge" id="host-phase-badge">等待中</span>
+    </div>
+  </div>
+
+  <div class="host-controls" id="host-controls">
+    <button class="btn-outline" onclick="advancePhase('prev')" id="btn-prev" disabled>◀ 上一阶段</button>
+    <button class="btn-primary" onclick="advancePhase('next')" id="btn-next">开始填卡片 ▶</button>
+    <button class="btn-outline" onclick="resetGame()" style="margin-left:auto;">🔄 重新开始</button>
+    <button class="btn-outline" onclick="skipToBingo()" id="btn-skip-bingo" style="display:none;">跳过竞猜→真心话大冒险</button>
+  </div>
+
+  <!-- LOBBY -->
+  <div id="host-lobby">
+    <div style="font-size:1.4rem; margin-bottom:8px;">📱 请同门用手机浏览器打开以下地址</div>
+    <div class="join-url-box">
+      <div class="join-label">加入地址</div>
+      <div class="join-url" id="host-join-url">---</div>
+      <div class="qr-container" id="qr-container">
+        <span style="color:var(--gray);">加载中...</span>
+      </div>
+    </div>
+    <div style="font-size:1.1rem; margin-bottom:12px;">
+      已加入：<strong id="host-player-count">0</strong> 人
+    </div>
+    <div class="players-grid" id="host-players-grid"></div>
+  </div>
+
+  <!-- CARDS -->
+  <div id="host-cards" class="hidden">
+    <h2 style="font-size:1.8rem; margin-bottom:8px;">📝 大家都在填卡片...</h2>
+    <div class="progress-container">
+      <div style="font-size:1.2rem; margin-bottom:4px;">
+        已提交：<strong id="cards-done">0</strong> / <span id="cards-total">0</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="cards-progress-fill" style="width:0%"></div>
+      </div>
+    </div>
+    <div class="card-preview-list" id="card-preview-list"></div>
+  </div>
+
+  <!-- GUESS -->
+  <div id="host-guess" class="hidden">
+    <div class="progress-dots" id="guess-progress-dots"></div>
+    <div class="current-turn" id="guess-turn-card">
+      <div class="turn-label">🎯 轮到谁来猜？</div>
+      <div class="turn-name" id="guess-turn-name">---</div>
+      <div class="card-display" id="guess-card-display"></div>
+    </div>
+    <div id="guess-result-area"></div>
+    <button class="btn-primary" id="btn-next-guesser" onclick="nextGuesser()" style="display:none; margin-top:12px;">
+      下一个 ▶
+    </button>
+  </div>
+
+  <!-- BLUFF -->
+  <div id="host-bluff" class="hidden">
+    <!-- Submit waiting -->
+    <div id="host-bluff-waiting" style="text-align:center; padding-top:40px;">
+      <h2 style="font-size:1.8rem; margin-bottom:8px;">🎭 真心话大冒险 — 准备阶段</h2>
+      <p style="color:var(--gray); margin-bottom:16px;">等大家在手机上提交完"一条真相+两条谎言"...</p>
+      <div class="progress-container" style="max-width:500px; margin: 20px auto;">
+        <div style="font-size:1.2rem; margin-bottom:4px;">
+          已提交：<strong id="bluff-done">0</strong> / <span id="bluff-total">0</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="bluff-progress-fill" style="width:0%"></div>
+        </div>
+      </div>
+      <button class="btn-primary" id="btn-start-bluff" onclick="startBluff()" style="margin-top:16px;">
+        开始投票 ▶
+      </button>
+    </div>
+    <!-- Voting round -->
+    <div id="host-bluff-voting" style="display:none; text-align:center;">
+      <div class="progress-dots" id="bluff-progress-dots"></div>
+      <div style="font-size:1.1rem; color:var(--gray); margin-bottom:4px;">猜猜哪个是 <strong id="bluff-player-name" style="color:var(--red);"></strong> 的真实信息？</div>
+      <div id="host-bluff-statements" style="display:grid; gap:16px; max-width:700px; margin:20px auto;"></div>
+      <div style="margin-top:12px; font-size:1.1rem;">
+        已投票：<strong id="bluff-vote-count">0</strong> 人
+      </div>
+      <button class="btn-gold" id="btn-reveal-bluff" onclick="revealBluff()" style="margin-top:12px; font-size:1.1rem;">
+        🔔 开奖！
+      </button>
+      <button class="btn-primary" id="btn-next-bluff" onclick="nextBluff()" style="display:none; margin-top:12px;">
+        下一个 ▶
+      </button>
+    </div>
+    <!-- Final leaderboard -->
+    <div id="host-bluff-done" style="display:none; text-align:center;">
+      <h2 style="font-size:2rem; margin-bottom:16px;">🏆 师门大家庭</h2>
+      <div id="host-bluff-leaderboard" style="max-width:500px; margin:0 auto;"></div>
+    </div>
+  </div>
+
+  <!-- PHOTO -->
+  <div id="host-photo" class="hidden">
+    <h2 style="font-size:2rem; margin-bottom:8px;">📸 合影时刻！</h2>
+    <p style="color:var(--gray); font-size:1.1rem; margin-bottom:20px;">贾门大家庭 🎓</p>
+    <div class="card-mosaic" id="card-mosaic"></div>
+    <button class="btn-gold" onclick="spawnConfetti()" style="font-size:1.2rem; padding:16px 40px; margin-top:20px;">
+      🎉 撒花庆祝
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!--  PLAYER VIEW                           -->
+<!-- ═══════════════════════════════════════ -->
+<div id="player-view" class="hidden">
+  <div class="player-header">
+    <h1>🎬 贾门专属 Icebreaker</h1>
+    <div class="subtitle" id="player-phase-sub">师门破冰游戏</div>
+  </div>
+
+  <!-- JOIN -->
+  <div id="player-join">
+    <div class="join-icon">👋</div>
+    <div style="font-size:1.2rem; margin-bottom:6px;">欢迎来到师门聚会！</div>
+    <div class="room-label">当前房间</div>
+    <div class="room-display" id="player-room-display">----</div>
+    <div class="player-card" id="join-card">
+      <div id="current-account" style="display:none; background:#FFF0F3; border-radius:8px; padding:10px; margin-bottom:12px; font-size:0.9rem;">
+        当前账号：<strong id="current-account-name"></strong>
+        <button class="btn-outline" onclick="switchAccount()" style="padding:4px 12px; font-size:0.8rem; margin-left:8px;">切换账号</button>
+      </div>
+      <input type="text" id="join-name" placeholder="请输入你的名字" maxlength="20" autocomplete="off">
+      <button class="btn-primary" onclick="playerJoin()" style="width:100%; margin-top:8px;">
+        加入游戏
+      </button>
+    </div>
+    <div id="join-error" style="color:var(--red); font-weight:600; margin-top:8px;"></div>
+  </div>
+
+  <!-- WAITING -->
+  <div id="player-waiting" class="hidden">
+    <div class="waiting-animation">⏳</div>
+    <div class="waiting-text" id="waiting-text">等待主持人开始...</div>
+    <div style="margin-top:20px;">
+      <button class="btn-outline" onclick="switchAccount()" style="font-size:0.85rem;">不是你的账号？点此切换</button>
+    </div>
+  </div>
+
+  <!-- CARD FORM -->
+  <div id="player-card-form" class="hidden">
+    <div style="text-align:center; margin-bottom:16px;">
+      <span style="font-size:1.3rem;">📝</span>
+      <span style="font-size:1.1rem; font-weight:700;">填写你的身份卡</span>
+    </div>
+    <div class="player-card">
+      <div class="form-group">
+        <div class="form-label"><span class="emoji">🎂</span> 你的学术代际</div>
+        <input type="text" id="card-gen" placeholder="例如：导师第二届博士 / 2023级硕士" maxlength="30">
+        <div class="char-count"><span id="card-gen-count">0</span>/30</div>
+      </div>
+      <div class="form-group">
+        <div class="form-label"><span class="emoji">❄️</span> 一个关于你的冷知识</div>
+        <textarea id="card-fact" placeholder="越离谱越好！比如：我在实验室养过一只叫'数据'的🐢" maxlength="60"></textarea>
+        <div class="char-count"><span id="card-fact-count">0</span>/60</div>
+      </div>
+      <div class="form-group">
+        <div class="form-label"><span class="emoji">⭐</span> 你在师门的标志性事件</div>
+        <textarea id="card-event" placeholder="比如：被导师改论文改了11稿 / 师门聚餐必点毛肚" maxlength="60"></textarea>
+        <div class="char-count"><span id="card-event-count">0</span>/60</div>
+      </div>
+      <button class="btn-primary" onclick="submitCard()" style="width:100%;">
+        提交身份卡 ✅
+      </button>
+    </div>
+  </div>
+
+  <!-- GUESS -->
+  <div id="player-guess" class="hidden">
+    <div style="text-align:center; margin-bottom:12px;" id="guess-status-text">
+      <span style="font-size:1.1rem;">🔍 猜猜这是谁？</span>
+    </div>
+    <div class="current-card" id="player-current-card"></div>
+    <div class="player-card" id="player-guess-controls">
+      <div style="font-weight:700; margin-bottom:8px;">这张卡片的主人是谁？</div>
+      <select id="guess-select">
+        <option value="">-- 选择名字 --</option>
+      </select>
+      <button class="btn-primary" onclick="submitGuess()" style="width:100%; margin-top:8px;">
+        我猜就是TA！🎯
+      </button>
+      <div id="guess-feedback" style="margin-top:12px; text-align:center;"></div>
+    </div>
+  </div>
+
+  <!-- TRUTH or DARE: Card Display -->
+  <div id="player-truth" class="hidden">
+    <div style="text-align:center; padding-top:20px;">
+      <div style="font-size:3rem;" id="truth-emoji">🔍</div>
+      <div style="font-size:1.3rem; font-weight:900; margin:12px 0; color:var(--red);" id="truth-heading">真心话大冒险</div>
+      <div style="color:var(--gray); font-size:0.95rem; margin-bottom:20px;" id="truth-subtitle">大屏幕正在展示身份卡，大家口头提问~</div>
+      <div class="player-card" id="truth-card-display" style="text-align:left;">
+        <div style="font-weight:900; font-size:1.3rem; margin-bottom:16px; text-align:center;" id="truth-target-name">---</div>
+        <div style="background:var(--gold-light); border-radius:10px; padding:16px; margin-bottom:10px;">
+          <div style="font-size:0.8rem; color:var(--gray);">🎂 学术代际</div>
+          <div style="font-size:1.2rem; font-weight:700;" id="truth-gen">---</div>
+        </div>
+        <div style="background:var(--gold-light); border-radius:10px; padding:16px; margin-bottom:10px;">
+          <div style="font-size:0.8rem; color:var(--gray);">❄️ 冷知识</div>
+          <div style="font-size:1.2rem; font-weight:700;" id="truth-fact">---</div>
+        </div>
+        <div style="background:var(--gold-light); border-radius:10px; padding:16px;">
+          <div style="font-size:0.8rem; color:var(--gray);">⭐ 标志性事件</div>
+          <div style="font-size:1.2rem; font-weight:700;" id="truth-event">---</div>
+        </div>
+      </div>
+      <div id="truth-done-msg" style="display:none; margin-top:20px;">
+        <div style="font-size:3rem;">🎉</div>
+        <div style="font-size:1.2rem; font-weight:700; margin-top:8px;">所有人都提问完了！</div>
+        <div style="color:var(--gray);">等待主持人进入合影环节~</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHOTO -->
+  <div id="player-photo" class="hidden">
+    <div style="text-align:center; padding-top:40px;">
+      <div style="font-size:5rem;">📸</div>
+      <div style="font-size:1.3rem; font-weight:700; margin-top:16px;">合影时刻！</div>
+      <div style="color:var(--gray); margin-top:8px;">快看大屏幕！</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!--  SCRIPTS                              -->
+<!-- ═══════════════════════════════════════ -->
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js">
+</script>
+<script>
+// ─── Constants ───
+const PHASES = ['LOBBY', 'CARDS', 'GUESS', 'BLUFF', 'PHOTO'];
+
+// ─── State ───
+const isHost = new URLSearchParams(location.search).get('role') === 'host';
+let playerId = sessionStorage.getItem('playerId') || null;
+let playerName = sessionStorage.getItem('playerName') || null;
+let currentPhase = 'LOBBY';
+let allPlayers = [];      // [{playerId, name}]
+let currentGuesserId = null;
+let currentCard = null;
+let eventSource = null;
+
+// ─── Init ───
+function init() {
+  document.getElementById(isHost ? 'host-view' : 'player-view').classList.remove('hidden');
+
+  if (isHost) {
+    initHost();
+  } else {
+    initPlayer();
+  }
+  connectSSE();
+}
+
+// ═══════════════════════════════════════
+//  SSE Connection
+// ═══════════════════════════════════════
+function connectSSE() {
+  const role = isHost ? 'host' : 'player';
+  eventSource = new EventSource(`/events?role=${role}`);
+
+  eventSource.addEventListener('message', (e) => {
+    try {
+      const { event, data } = JSON.parse(e.data);
+      handleEvent(event, data);
+    } catch (err) {}
+  });
+
+  eventSource.onerror = () => {
+    // Will auto-reconnect
+  };
+}
+
+function handleEvent(event, data) {
+  if (isHost) {
+    handleHostEvent(event, data);
+  } else {
+    handlePlayerEvent(event, data);
+  }
+}
+
+// ═══════════════════════════════════════
+//  HOST LOGIC
+// ═══════════════════════════════════════
+function initHost() {
+  updateHostPhaseUI('LOBBY');
+  fetchState();
+}
+
+function handleHostEvent(event, data) {
+  switch (event) {
+    case 'init':
+      currentPhase = data.phase;
+      document.getElementById('host-room-code').textContent = data.roomCode;
+      allPlayers = Object.entries(data.players || {}).map(([id, p]) => ({ playerId: id, name: p.name }));
+      updateHostPhaseUI(data.phase);
+      renderHostPlayers();
+      renderHostCardProgress(data);
+      if (data.phase === 'GUESS') setupGuessUI(data);
+      if (data.phase === 'BLUFF') setupHostBluffUI(data);
+      break;
+
+    case 'player-joined':
+      allPlayers.push({ playerId: data.playerId, name: data.name });
+      renderHostPlayers();
+      break;
+
+    case 'player-list-update':
+      allPlayers = Object.entries(data.players).map(([id, name]) => ({ playerId: id, name }));
+      renderHostPlayers();
+      break;
+
+    case 'phase-changed':
+      currentPhase = data.phase;
+      updateHostPhaseUI(data.phase);
+      if (data.phase === 'GUESS') fetchFullState();
+      if (data.phase === 'BLUFF') setupHostBluffUI(data);
+      if (data.phase === 'PHOTO') renderPhotoMosaic();
+      break;
+
+    case 'card-submitted':
+      renderHostCardProgress({
+        cardsSubmitted: data.cardsSubmitted,
+        totalPlayers: data.totalPlayers,
+      });
+      break;
+
+    case 'guess-setup': setupGuessUI(data); break;
+    case 'next-guesser': setupGuessUI(data); break;
+    case 'guess-result': showGuessResult(data); break;
+
+    case 'bluff-submitted':
+      document.getElementById('bluff-done').textContent = data.submittedCount;
+      document.getElementById('bluff-total').textContent = data.totalPlayers;
+      document.getElementById('bluff-progress-fill').style.width = (data.submittedCount / data.totalPlayers * 100) + '%';
+      break;
+
+    case 'bluff-round':
+      showHostBluffVoting(data);
+      break;
+
+    case 'bluff-vote-update':
+      document.getElementById('bluff-vote-count').textContent = data.voteCount;
+      break;
+
+    case 'bluff-reveal-host':
+      showHostBluffReveal(data);
+      break;
+
+    case 'bluff-phase-done':
+      showHostBluffLeaderboard(data.results);
+      break;
+
+    case 'game-reset':
+      location.reload();
+      break;
+  }
+}
+
+function fetchState() {
+  fetch('/api/state/full').then(r => r.json()).then(data => {
+    currentPhase = data.phase;
+    document.getElementById('host-room-code').textContent = data.roomCode;
+    allPlayers = Object.entries(data.players || {}).map(([id, p]) => ({ playerId: id, name: p.name }));
+    updateHostPhaseUI(data.phase);
+    renderHostPlayers();
+    renderHostCardProgress(data);
+    if (data.phase === 'GUESS') fetchFullState();
+    if (data.phase === 'BLUFF') setupHostBluffUI(data);
+    if (data.phase === 'PHOTO') renderPhotoMosaic();
+  });
+}
+
+function fetchFullState() {
+  fetch('/api/state/full').then(r => r.json()).then(data => {
+    if (data.phase === 'GUESS' && data.guessOrder) {
+      setupGuessUI({
+        guessOrder: data.guessOrder.map(id => ({
+          playerId: id,
+          name: data.players[id]?.name || '?',
+        })),
+        currentGuesser: data.currentGuessIndex < data.guessOrder.length ? {
+          id: data.guessOrder[data.currentGuessIndex],
+          name: data.players[data.guessOrder[data.currentGuessIndex]]?.name || '?',
+        } : null,
+        currentCard: data.currentGuessIndex < data.guessOrder.length
+          ? data.cards[data.guessAssignments[data.guessOrder[data.currentGuessIndex]]]
+          : null,
+        index: data.currentGuessIndex,
+        total: data.guessOrder.length,
+      });
+    }
+  });
+}
+
+function updateHostPhaseUI(phase) {
+  const badge = document.getElementById('host-phase-badge');
+  const badgeText = { LOBBY: '🏠 等待加入', CARDS: '📝 填写卡片', GUESS: '🔍 竞猜环节', BLUFF: '🎭 真心话大冒险', PHOTO: '📸 合影' };
+  badge.textContent = badgeText[phase] || phase;
+
+  // Show/hide phase divs
+  document.getElementById('host-lobby').classList.toggle('hidden', phase !== 'LOBBY');
+  document.getElementById('host-cards').classList.toggle('hidden', phase !== 'CARDS');
+  document.getElementById('host-guess').classList.toggle('hidden', phase !== 'GUESS');
+  document.getElementById('host-bluff').classList.toggle('hidden', phase !== 'BLUFF');
+  document.getElementById('host-photo').classList.toggle('hidden', phase !== 'PHOTO');
+
+  // Control buttons
+  const idx = PHASES.indexOf(phase);
+  document.getElementById('btn-prev').disabled = idx <= 0;
+  const btnNext = document.getElementById('btn-next');
+  if (idx >= PHASES.length - 1) {
+    btnNext.textContent = '已是最后阶段';
+    btnNext.disabled = true;
+  } else {
+    const nextLabels = { LOBBY: '开始填卡片 ▶', CARDS: '开始竞猜 ▶', GUESS: '开始真心话大冒险 ▶', BLUFF: '合影留念 ▶' };
+    btnNext.textContent = nextLabels[phase] || '下一阶段 ▶';
+    btnNext.disabled = false;
+  }
+
+  // Show skip button in GUESS phase
+  document.getElementById('btn-skip-bingo').style.display = phase === 'GUESS' ? 'inline-block' : 'none';
+}
+
+function renderHostPlayers() {
+  document.getElementById('host-player-count').textContent = allPlayers.length;
+  const grid = document.getElementById('host-players-grid');
+  grid.innerHTML = allPlayers.map(p =>
+    `<div class="player-chip"><span class="dot"></span>${escHtml(p.name)}</div>`
+  ).join('');
+}
+
+function renderHostCardProgress(data) {
+  const done = data.cardsSubmitted || 0;
+  const total = data.totalPlayers || allPlayers.length || 0;
+  document.getElementById('cards-done').textContent = done;
+  document.getElementById('cards-total').textContent = total;
+  const pct = total > 0 ? (done / total * 100) : 0;
+  document.getElementById('cards-progress-fill').style.width = pct + '%';
+
+  const list = document.getElementById('card-preview-list');
+  list.innerHTML = allPlayers.map(p => {
+    const hasCard = data.players && data.players[p.playerId] && data.players[p.playerId].cardSubmitted;
+    return `<div class="card-preview-chip ${hasCard ? 'done' : ''}">
+      ${hasCard ? '<span class="check">✓</span>' : '<span style="color:#CCC;">○</span>'}
+      ${escHtml(p.name)}
+    </div>`;
+  }).join('');
+}
+
+function setupGuessUI(data) {
+  if (!data || !data.currentGuesser) {
+    // All done
+    document.getElementById('guess-turn-name').textContent = '全部猜完！';
+    document.getElementById('guess-card-display').innerHTML = '<p style="font-size:1.2rem; color:var(--gray);">进入下一阶段吧~</p>';
+    document.getElementById('btn-next-guesser').style.display = 'none';
+    return;
+  }
+
+  const idx = data.index !== undefined ? data.index : 0;
+  const total = data.total || data.guessOrder?.length || 0;
+
+  document.getElementById('guess-turn-name').textContent = data.currentGuesser.name;
+  document.getElementById('btn-next-guesser').style.display = 'none';
+  document.getElementById('guess-result-area').innerHTML = '';
+
+  // Render progress dots
+  const dots = document.getElementById('guess-progress-dots');
+  dots.innerHTML = Array.from({ length: total }, (_, i) => {
+    let cls = 'progress-dot';
+    if (i < idx) cls += ' done';
+    if (i === idx) cls += ' current';
+    return `<div class="${cls}"></div>`;
+  }).join('');
+
+  // Render card
+  if (data.currentCard) {
+    document.getElementById('guess-card-display').innerHTML = `
+      <div class="card-item">
+        <div class="label">🎂 学术代际</div>
+        <div class="value">${escHtml(data.currentCard.gen)}</div>
+      </div>
+      <div class="card-item">
+        <div class="label">❄️ 冷知识</div>
+        <div class="value">${escHtml(data.currentCard.fact)}</div>
+      </div>
+      <div class="card-item">
+        <div class="label">⭐ 标志性事件</div>
+        <div class="value">${escHtml(data.currentCard.event)}</div>
+      </div>`;
+  }
+}
+
+function showGuessResult(data) {
+  const area = document.getElementById('guess-result-area');
+  if (data.correct) {
+    area.innerHTML = `
+      <div class="guess-result-overlay" onclick="this.remove(); document.getElementById('btn-next-guesser').style.display='inline-block';">
+        <div class="guess-result-card">
+          <div class="result-icon">🎉</div>
+          <div class="result-title" style="color:#4CAF50;">猜对了！</div>
+          <div style="font-size:1.3rem;">这张卡片的主人就是 <strong style="color:var(--red);">${escHtml(data.cardOwnerName)}</strong></div>
+          <div style="margin-top:16px; color:var(--gray);">点击任意处关闭</div>
+        </div>
+      </div>`;
+    spawnConfetti();
+  } else {
+    area.innerHTML = `
+      <div class="guess-result-overlay" onclick="this.remove(); document.getElementById('btn-next-guesser').style.display='inline-block';">
+        <div class="guess-result-card">
+          <div class="result-icon">😅</div>
+          <div class="result-title" style="color:#FF9800;">猜错了！</div>
+          <div style="font-size:1.1rem; margin-bottom:12px;">
+            实际主人：<strong>${escHtml(data.cardOwnerName)}</strong>
+          </div>
+          <div class="penalty-box">${data.penalty || '接受惩罚吧~'}</div>
+          <div style="margin-top:16px; color:var(--gray);">点击任意处关闭</div>
+        </div>
+      </div>`;
+  }
+  document.getElementById('btn-next-guesser').style.display = 'none'; // Hidden behind overlay
+}
+
+function setupHostBluffUI(data) {
+  // Show waiting view initially
+  document.getElementById('host-bluff-waiting').style.display = 'block';
+  document.getElementById('host-bluff-voting').style.display = 'none';
+  document.getElementById('host-bluff-done').style.display = 'none';
+  if (data.bluffSubmittedCount !== undefined) {
+    document.getElementById('bluff-done').textContent = data.bluffSubmittedCount || 0;
+    document.getElementById('bluff-total').textContent = data.playerCount || 0;
+    const pct = data.playerCount > 0 ? ((data.bluffSubmittedCount || 0) / data.playerCount * 100) : 0;
+    document.getElementById('bluff-progress-fill').style.width = pct + '%';
+  }
+}
+
+function showHostBluffVoting(data) {
+  document.getElementById('host-bluff-waiting').style.display = 'none';
+  document.getElementById('host-bluff-voting').style.display = 'block';
+  document.getElementById('host-bluff-done').style.display = 'none';
+  document.getElementById('btn-reveal-bluff').style.display = 'inline-block';
+  document.getElementById('btn-next-bluff').style.display = 'none';
+
+  document.getElementById('bluff-player-name').textContent = data.bluffPlayer.name;
+  document.getElementById('bluff-vote-count').textContent = data.voteCount || 0;
+
+  // Render progress dots
+  const dots = document.getElementById('bluff-progress-dots');
+  dots.innerHTML = Array.from({ length: data.total }, (_, i) => {
+    let cls = 'progress-dot';
+    if (i < data.index) cls += ' done';
+    if (i === data.index) cls += ' current';
+    return `<div class="${cls}"></div>`;
+  }).join('');
+
+  // Render statements
+  const labels = ['A', 'B', 'C'];
+  document.getElementById('host-bluff-statements').innerHTML = data.statements.map((s, i) => `
+    <div class="bluff-statement-card" id="host-bluff-card-${i}">
+      <div class="stmt-label">${labels[i]}</div>
+      ${escHtml(s.text)}
+    </div>`).join('');
+}
+
+function showHostBluffReveal(data) {
+  document.getElementById('btn-reveal-bluff').style.display = 'none';
+  document.getElementById('btn-next-bluff').style.display = 'inline-block';
+
+  data.statements.forEach((s, i) => {
+    const card = document.getElementById(`host-bluff-card-${i}`);
+    if (!card) return;
+    card.classList.add(s.isTruth ? 'reveal-truth' : 'reveal-lie');
+  });
+
+  document.getElementById('bluff-vote-count').textContent =
+    `${data.voteCount} 人投票，${data.fooledCount} 人被骗 🤯`;
+}
+
+function showHostBluffLeaderboard(results) {
+  document.getElementById('host-bluff-waiting').style.display = 'none';
+  document.getElementById('host-bluff-voting').style.display = 'none';
+  document.getElementById('host-bluff-done').style.display = 'block';
+
+  const emojis = ['🥇', '🥈', '🥉'];
+  document.getElementById('host-bluff-leaderboard').innerHTML = results.map((r, i) => `
+    <div class="leaderboard-item ${i === 0 ? 'winner' : ''}">
+      <div class="leaderboard-rank">${emojis[i] || '👏'}</div>
+      <div style="flex:1; text-align:left;">
+        <strong>${escHtml(r.playerName)}</strong>
+        <div style="font-size:0.85rem; color:var(--gray);">骗过了 ${r.fooledCount}/${r.totalVoters} 人</div>
+      </div>
+    </div>`).join('');
+  if (results.length > 0) spawnConfetti();
+}
+
+function renderPhotoMosaic() {
+  fetch('/api/state/full').then(r => r.json()).then(data => {
+    const cards = data.cards || {};
+    const players = data.players || {};
+    const mosaic = document.getElementById('card-mosaic');
+    mosaic.innerHTML = Object.entries(cards).map(([pid, card], i) => `
+      <div class="mosaic-card" style="animation-delay:${i * 0.1}s">
+        <div class="m-name">${escHtml(players[pid]?.name || '神秘人')}</div>
+        <div class="m-gen">🎂 ${escHtml(card.gen)}</div>
+        <div class="m-fact">${escHtml(card.fact)}</div>
+        <div class="m-event">${escHtml(card.event)}</div>
+      </div>
+    `).join('') || '<p style="color:var(--gray);">暂无卡片</p>';
+  });
+}
+
+// ─── Host Actions ───
+function advancePhase(direction) {
+  fetch('/api/advance-phase', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ direction }),
+  }).then(r => r.json()).then(data => {
+    if (data.error) {
+      showToast(data.error);
+    }
+  });
+}
+
+function nextGuesser() {
+  document.getElementById('btn-next-guesser').style.display = 'none';
+  fetch('/api/next-guesser', { method: 'POST' });
+}
+
+function skipToBingo() {
+  if (!confirm('确定要跳过竞猜环节，直接进入真心话大冒险吗？')) return;
+  advancePhase('next');
+  setTimeout(() => advancePhase('next'), 300);
+}
+
+function startBluff() {
+  fetch('/api/start-bluff', { method: 'POST' }).then(r => r.json()).then(d => {
+    if (d.error) showToast(d.error);
+  });
+}
+
+function revealBluff() {
+  fetch('/api/reveal-bluff', { method: 'POST' });
+}
+
+function nextBluff() {
+  fetch('/api/next-bluff', { method: 'POST' });
+}
+
+function resetGame() {
+  if (!confirm('确定要重新开始吗？所有数据将被清除。')) return;
+  fetch('/api/reset', { method: 'POST' });
+}
+
+// ═══════════════════════════════════════
+//  PLAYER LOGIC
+// ═══════════════════════════════════════
+function initPlayer() {
+  // Always start with join form visible in LOBBY
+  setPlayerPhase('LOBBY');
+
+  // Try rejoin if we have a stored playerId
+  if (playerId) {
+    fetch('/api/rejoin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ playerId }),
+    }).then(r => {
+      if (!r.ok) throw new Error('rejoin failed');
+      return r.json();
+    }).then(data => {
+      if (data.playerId) {
+        playerId = data.playerId;
+        playerName = data.name;
+        sessionStorage.setItem('playerId', playerId);
+        sessionStorage.setItem('playerName', playerName);
+        setPlayerPhase(data.phase || 'LOBBY');
+      } else {
+        // Invalid player, reset
+        playerId = null;
+        sessionStorage.removeItem('playerId');
+        setPlayerPhase('LOBBY');
+      }
+    }).catch(() => {
+      // Rejoin failed, clear and let user join fresh
+      playerId = null;
+      sessionStorage.removeItem('playerId');
+      setPlayerPhase('LOBBY');
+    });
+  }
+
+  fetchStatePlayer();
+}
+
+function handlePlayerEvent(event, data) {
+  switch (event) {
+    case 'init':
+      currentPhase = data.phase;
+      document.getElementById('player-room-display').textContent = data.roomCode;
+      allPlayers = data.players || (data.playerNames || []).map((name, i) => ({ playerId: '_' + i, name }));
+      setPlayerPhase(data.phase);
+      if (data.phase === 'GUESS') updatePlayerGuessUI(data);
+      break;
+
+    case 'phase-changed':
+      currentPhase = data.phase;
+      setPlayerPhase(data.phase);
+      break;
+
+    case 'guess-turn-update':
+      fetchStatePlayer();
+      break;
+
+    case 'guess-result-public':
+      document.getElementById('guess-feedback').innerHTML =
+        `${escHtml(data.guesserName)} ${data.correct ? '猜对了！🎉' : '猜错了 😅 — 实际是 ' + escHtml(data.cardOwnerName)}`;
+      break;
+
+    case 'truth-target':
+      showTruthTarget(data);
+      break;
+
+    case 'truth-phase-done':
+      showTruthDone();
+      break;
+
+    case 'game-reset':
+      playerId = null;
+      sessionStorage.removeItem('playerId');
+      location.reload();
+      break;
+  }
+}
+
+function fetchStatePlayer() {
+  // For non-initial load, fetch player-specific state
+  if (!playerId) return;
+  fetch('/api/state').then(r => r.json()).then(data => {
+    currentPhase = data.phase;
+    allPlayers = data.players || (data.playerNames || []).map((name, i) => ({ playerId: '_' + i, name }));
+    // NOTE: Do NOT call setPlayerPhase here — it would call fetchStatePlayer again, causing infinite loop
+    if (data.phase === 'GUESS') {
+      updatePlayerGuessUI(data);
+    }
+    if (data.phase === 'BLUFF') setupPlayerBluffUI(data);
+  });
+}
+
+function setPlayerPhase(phase) {
+  currentPhase = phase;
+  const subMap = {
+    LOBBY: '贾门 Icebreaker', CARDS: '填写身份卡', GUESS: '竞猜环节',
+    BLUFF: '🎭 真心话大冒险', PHOTO: '合影时刻'
+  };
+  document.getElementById('player-phase-sub').textContent = subMap[phase] || '';
+
+  // In LOBBY, always show the join form (even if already joined — allows switching accounts)
+  document.getElementById('player-join').classList.toggle('hidden', phase !== 'LOBBY');
+  document.getElementById('player-waiting').classList.toggle('hidden', phase !== 'LOBBY' || !playerId);
+  document.getElementById('player-card-form').classList.toggle('hidden', phase !== 'CARDS');
+  document.getElementById('player-guess').classList.toggle('hidden', phase !== 'GUESS');
+  document.getElementById('player-truth').classList.toggle('hidden', phase !== 'BLUFF');
+  document.getElementById('player-photo').classList.toggle('hidden', phase !== 'PHOTO');
+
+  // Show account info if already joined
+  if (phase === 'LOBBY') {
+    if (playerId) {
+      document.getElementById('current-account').style.display = 'block';
+      document.getElementById('current-account-name').textContent = playerName;
+      document.getElementById('waiting-text').textContent = `你好，${playerName}！等待主持人开始...`;
+    } else {
+      document.getElementById('current-account').style.display = 'none';
+    }
+    // Always show join form in LOBBY
+    document.getElementById('player-join').classList.remove('hidden');
+    // If already joined, also show waiting message
+    document.getElementById('player-waiting').classList.toggle('hidden', !playerId);
+  }
+
+  if (phase === 'GUESS') {
+    fetchStatePlayer();
+  }
+}
+
+// ─── Player Actions ───
+function playerJoin() {
+  const name = document.getElementById('join-name').value.trim();
+  if (!name) {
+    document.getElementById('join-error').textContent = '请输入你的名字';
+    return;
+  }
+  document.getElementById('join-error').textContent = '';
+  const btn = document.querySelector('#join-card .btn-primary');
+  btn.disabled = true;
+  btn.textContent = '加入中...';
+
+  fetch('/api/join', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name }),
+  }).then(r => {
+    if (!r.ok) {
+      return r.json().then(d => { throw new Error(d.error || '加入失败（HTTP ' + r.status + '）'); });
+    }
+    return r.json();
+  }).then(data => {
+    playerId = data.playerId;
+    playerName = data.name;
+    sessionStorage.setItem('playerId', playerId);
+    sessionStorage.setItem('playerName', playerName);
+    document.getElementById('player-room-display').textContent = data.roomCode;
+    document.getElementById('join-name').value = '';
+    btn.disabled = false;
+    btn.textContent = '加入游戏';
+    setPlayerPhase('LOBBY');
+    showToast('加入成功！等待主持人开始...');
+  }).catch(err => {
+    document.getElementById('join-error').textContent = err.message || '连接失败，请确认手机和电脑在同一WiFi';
+    btn.disabled = false;
+    btn.textContent = '加入游戏';
+  });
+}
+
+function switchAccount() {
+  playerId = null;
+  playerName = null;
+  sessionStorage.removeItem('playerId');
+  sessionStorage.removeItem('playerName');
+  document.getElementById('join-name').value = '';
+  document.getElementById('join-error').textContent = '';
+  setPlayerPhase('LOBBY');
+  showToast('已退出，可以重新加入');
+}
+
+function submitCard() {
+  const gen = document.getElementById('card-gen').value.trim();
+  const fact = document.getElementById('card-fact').value.trim();
+  const event = document.getElementById('card-event').value.trim();
+
+  if (!gen || !fact || !event) {
+    showToast('请填写所有三项信息');
+    return;
+  }
+
+  fetch('/api/submit-card', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ playerId, gen, fact, event }),
+  }).then(r => r.json()).then(data => {
+    if (data.success) {
+      // Store card locally for bluff phase (avoids network dependency)
+      sessionStorage.setItem('myCard', JSON.stringify({ gen, fact, event }));
+      showToast('卡片已提交！等待其他人...');
+      document.getElementById('player-card-form').classList.add('hidden');
+      document.getElementById('player-waiting').classList.remove('hidden');
+      document.getElementById('waiting-text').textContent = '卡片已提交！等待竞猜开始...';
+    } else {
+      showToast(data.error || '提交失败');
+    }
+  });
+}
+
+function updatePlayerGuessUI(data) {
+  if (!data || !data.currentCard) {
+    document.getElementById('player-current-card').innerHTML = '<p style="text-align:center; color:var(--gray);">等待中...</p>';
+    return;
+  }
+
+  // Update card display
+  document.getElementById('player-current-card').innerHTML = `
+    <div class="cg-item">
+      <div class="cg-label">🎂 学术代际</div>
+      <div class="cg-value">${escHtml(data.currentCard.gen)}</div>
+    </div>
+    <div class="cg-item">
+      <div class="cg-label">❄️ 冷知识</div>
+      <div class="cg-value">${escHtml(data.currentCard.fact)}</div>
+    </div>
+    <div class="cg-item">
+      <div class="cg-label">⭐ 标志性事件</div>
+      <div class="cg-value">${escHtml(data.currentCard.event)}</div>
+    </div>`;
+
+  // Update name selector
+  const select = document.getElementById('guess-select');
+  select.innerHTML = '<option value="">-- 选择名字 --</option>' +
+    allPlayers.filter(p => p.name !== playerName).map(p =>
+      `<option value="${escHtml(p.playerId)}">${escHtml(p.name)}</option>`
+    ).join('');
+
+  // Show/hide guess controls based on whether it's this player's turn
+  const isMyTurn = data.currentGuesser && data.currentGuesser.id === playerId;
+  document.getElementById('player-guess-controls').classList.toggle('hidden', !isMyTurn);
+  document.getElementById('guess-status-text').innerHTML = isMyTurn
+    ? '<span style="font-size:1.1rem; color:var(--red); font-weight:700;">🎯 轮到你了！大声念出卡片，猜猜是谁？</span>'
+    : `<span style="font-size:1rem;">轮到 <strong>${escHtml(data.currentGuesser?.name || '?')}</strong> 猜，请保持安静~</span>`;
+}
+
+function submitGuess() {
+  const guessedPlayerId = document.getElementById('guess-select').value;
+  if (!guessedPlayerId) {
+    showToast('请选择你要猜的人');
+    return;
+  }
+
+  fetch('/api/guess', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ playerId, guessedPlayerId }),
+  }).then(r => r.json()).then(data => {
+    if (data.error) {
+      showToast(data.error);
+      return;
+    }
+    const fb = document.getElementById('guess-feedback');
+    if (data.correct) {
+      fb.innerHTML = '<div style="font-size:1.3rem; color:#4CAF50; font-weight:900;">🎉 猜对了！</div>';
+      spawnConfetti();
+    } else {
+      fb.innerHTML = `
+        <div style="font-size:1.1rem; color:#FF9800;">😅 猜错了！</div>
+        <div style="margin-top:4px;">实际是：<strong>${escHtml(data.cardOwnerName)}</strong></div>
+        <div class="penalty-box">${data.penalty || '接受惩罚吧~'}</div>`;
+    }
+    document.getElementById('player-guess-controls').classList.add('hidden');
+  });
+}
+
+// ─── Player TRUTH or DARE Functions ───
+function showTruthTarget(data) {
+  var target = data.target;
+  if (!target || !target.card) return;
+  document.getElementById('truth-emoji').textContent = (target.playerId === playerId) ? '🔥' : '🔍';
+  document.getElementById('truth-heading').textContent = (target.playerId === playerId)
+    ? '轮到你了！大家向你提问...' : '正在提问：' + escHtml(target.name);
+  document.getElementById('truth-subtitle').textContent = (target.playerId === playerId)
+    ? '请如实回答每一个问题，拒绝回答就要接受惩罚！'
+    : '关于「' + escHtml(target.name) + '」的三条信息，大胆提问吧！';
+  document.getElementById('truth-target-name').textContent = '🎯 ' + escHtml(target.name);
+  document.getElementById('truth-gen').textContent = target.card.gen;
+  document.getElementById('truth-fact').textContent = target.card.fact;
+  document.getElementById('truth-event').textContent = target.card.event;
+  document.getElementById('truth-card-display').style.display = '';
+  document.getElementById('truth-done-msg').style.display = 'none';
+}
+
+function showTruthDone() {
+  document.getElementById('truth-card-display').style.display = 'none';
+  document.getElementById('truth-done-msg').style.display = '';
+  document.getElementById('truth-emoji').textContent = '🎉';
+  document.getElementById('truth-heading').textContent = '所有人都提问完了！';
+  document.getElementById('truth-subtitle').textContent = '等待主持人进入合影环节~';
+}
+
+function escAttr(str) { return (str || '').replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
+
+// ═══════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════
+function escHtml(str) {
+  if (!str) return '';
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function showToast(msg) {
+  const existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2500);
+}
+
+function spawnConfetti() {
+  const colors = ['#C41E3A', '#D4A574', '#FFD700', '#FF6B6B', '#4CAF50', '#2196F3', '#FF9800', '#9C27B0'];
+  for (let i = 0; i < 60; i++) {
+    setTimeout(() => {
+      const piece = document.createElement('div');
+      piece.className = 'confetti-piece';
+      piece.style.left = Math.random() * 100 + '%';
+      piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+      piece.style.width = (Math.random() * 12 + 6) + 'px';
+      piece.style.height = (Math.random() * 12 + 6) + 'px';
+      piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+      piece.style.animationDuration = (Math.random() * 2 + 2) + 's';
+      document.body.appendChild(piece);
+      setTimeout(() => piece.remove(), 3500);
+    }, i * 30);
+  }
+}
+
+// ─── Char Counters (Player Card Form) ───
+function setupCharCounters() {
+  ['gen', 'fact', 'event'].forEach(field => {
+    const input = document.getElementById(`card-${field}`);
+    const counter = document.getElementById(`card-${field}-count`);
+    if (input && counter) {
+      input.addEventListener('input', () => {
+        counter.textContent = input.value.length;
+      });
+    }
+  });
+}
+
+// ─── QR Code Generation ───
+function generateQR() {
+  const joinUrl = document.getElementById('host-join-url').textContent;
+  const container = document.getElementById('qr-container');
+  if (typeof QRCode !== 'undefined') {
+    container.innerHTML = '';
+    try {
+      new QRCode(container, {
+        text: joinUrl,
+        width: 180,
+        height: 180,
+        colorDark: '#2C1810',
+        colorLight: '#FFFFFF',
+      });
+    } catch (e) {
+      container.innerHTML = '<span style="padding:20px; text-align:center;">📱<br>直接输入<br>上方网址</span>';
+    }
+  } else {
+    container.innerHTML = '<span style="padding:20px; text-align:center;">📱<br>直接输入<br>上方网址</span>';
+  }
+}
+
+// ─── Bootstrap ───
+window.addEventListener('DOMContentLoaded', () => {
+  init();
+  setupCharCounters();
+
+  if (isHost) {
+    // Display join URL
+    const joinUrl = location.origin + '/';
+    document.getElementById('host-join-url').textContent = joinUrl;
+
+    // Generate QR after a short delay (wait for CDN script to load)
+    setTimeout(generateQR, 800);
+    // Fallback: try again later if CDN is slow
+    setTimeout(generateQR, 3000);
+  } else {
+    // For players, fetch room code
+    fetch('/api/state').then(r => r.json()).then(data => {
+      document.getElementById('player-room-display').textContent = data.roomCode;
+    });
+  }
+});
+</script>
+
+</body>
+</html>

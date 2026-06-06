@@ -1,0 +1,12 @@
+{
+  "name": "jia-men-icebreaker",
+  "version": "1.0.0",
+  "description": "贾门专属 Icebreaker — 师门聚会破冰游戏",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

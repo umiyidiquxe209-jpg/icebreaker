@@ -1,4 +1,3 @@
-const { getStore } = require('@netlify/blobs');
 const crypto = require('crypto');
 
 // ─── Configuration ───
@@ -16,6 +15,9 @@ const PENALTIES = [
   '🕺 模仿在场的任意一个人',
   '🤪 做一个大家都没见过的鬼脸',
 ];
+
+// ─── In-memory state (persists across warm invocations) ───
+let gameState = createInitialState();
 
 // ─── Helpers ───
 function generateId() {
@@ -96,22 +98,15 @@ function json(body, status = 200) {
 }
 
 // ─── State helpers ───
-async function loadState() {
-  const store = getStore('game');
-  const raw = await store.get('state');
-  if (raw) {
-    try { return JSON.parse(raw); } catch (e) { return createInitialState(); }
-  }
-  return createInitialState();
+function loadState() {
+  return gameState;
 }
 
-async function saveState(state) {
-  state.version = (state.version || 0) + 1;
-  const store = getStore('game');
-  await store.set('state', JSON.stringify(state));
+function saveState() {
+  gameState.version = (gameState.version || 0) + 1;
 }
 
-// ─── Route handler ───
+// ─── Route parser ───
 function getRoute(path) {
   const idx = path.indexOf('/api/');
   if (idx === -1) return '/';
@@ -130,12 +125,11 @@ exports.handler = async (event) => {
   try {
     // ─── GET Routes ───
     if (route === '/state' && method === 'GET') {
-      const state = await loadState();
-      return json(getSafeState(state));
+      return json(getSafeState(loadState()));
     }
 
     if (route === '/state/full' && method === 'GET') {
-      const state = await loadState();
+      const state = loadState();
       return json({ ...state, playerCount: Object.keys(state.players).length });
     }
 
@@ -145,10 +139,10 @@ exports.handler = async (event) => {
 
     // ─── POST Routes ───
     const body = event.body ? JSON.parse(event.body) : {};
+    const state = loadState();
 
     // ─── Join ───
     if (route === '/join' && method === 'POST') {
-      const state = await loadState();
       const { name } = body;
       if (!name || !name.trim()) return json({ error: '名字不能为空' }, 400);
       const trimmed = name.trim();
@@ -156,13 +150,12 @@ exports.handler = async (event) => {
       if (exists) return json({ error: '这个名字已被使用，换个昵称吧~' }, 409);
       const playerId = generateId();
       state.players[playerId] = { name: trimmed, joinedAt: Date.now() };
-      await saveState(state);
+      saveState();
       return json({ playerId, name: trimmed, roomCode: state.roomCode });
     }
 
     // ─── Rejoin ───
     if (route === '/rejoin' && method === 'POST') {
-      const state = await loadState();
       const { playerId } = body;
       if (!playerId || !state.players[playerId]) {
         return json({ error: '未找到玩家信息，请重新加入' }, 404);
@@ -177,7 +170,6 @@ exports.handler = async (event) => {
 
     // ─── Submit Card ───
     if (route === '/submit-card' && method === 'POST') {
-      const state = await loadState();
       const { playerId, gen, fact, event } = body;
       if (!playerId || !state.players[playerId]) return json({ error: '无效的玩家' }, 400);
       if (!gen || !fact || !event) return json({ error: '请填写所有三项信息' }, 400);
@@ -187,13 +179,12 @@ exports.handler = async (event) => {
         event: event.trim(),
         submittedAt: Date.now(),
       };
-      await saveState(state);
+      saveState();
       return json({ success: true });
     }
 
     // ─── Advance Phase ───
     if (route === '/advance-phase' && method === 'POST') {
-      const state = await loadState();
       const { direction } = body;
       const currentIdx = PHASES.indexOf(state.phase);
 
@@ -224,12 +215,12 @@ exports.handler = async (event) => {
         }
 
         state.phase = nextPhase;
-        await saveState(state);
+        saveState();
       } else if (direction === 'prev') {
         const prevIdx = currentIdx - 1;
         if (prevIdx < 0) return json({ error: '已经是第一个阶段' }, 400);
         state.phase = PHASES[prevIdx];
-        await saveState(state);
+        saveState();
       }
 
       return json({ success: true, phase: state.phase });
@@ -237,19 +228,17 @@ exports.handler = async (event) => {
 
     // ─── Next Guesser ───
     if (route === '/next-guesser' && method === 'POST') {
-      const state = await loadState();
       state.currentGuessIndex++;
       if (state.currentGuessIndex >= state.guessOrder.length) {
-        await saveState(state);
+        saveState();
         return json({ done: true });
       }
-      await saveState(state);
+      saveState();
       return json({ success: true });
     }
 
     // ─── Submit Guess ───
     if (route === '/guess' && method === 'POST') {
-      const state = await loadState();
       const { playerId, guessedPlayerId } = body;
       if (!playerId || !guessedPlayerId) return json({ error: '请选择你要猜的人' }, 400);
       if (playerId !== state.guessOrder[state.currentGuessIndex]) {
@@ -268,7 +257,7 @@ exports.handler = async (event) => {
         correct,
       });
 
-      await saveState(state);
+      saveState();
       return json({
         correct,
         cardOwnerName: state.players[cardOwnerId].name,
@@ -279,21 +268,19 @@ exports.handler = async (event) => {
 
     // ─── Next Truth ───
     if (route === '/next-truth' && method === 'POST') {
-      const state = await loadState();
       if (state.phase !== 'BLUFF') return json({ error: '不在真心话大冒险阶段' }, 400);
       state.currentTruthIndex++;
       if (state.currentTruthIndex >= state.truthOrder.length) {
-        await saveState(state);
+        saveState();
         return json({ done: true });
       }
-      await saveState(state);
+      saveState();
       return json({ success: true });
     }
 
     // ─── Reset ───
     if (route === '/reset' && method === 'POST') {
-      const store = getStore('game');
-      await store.set('state', JSON.stringify(createInitialState()));
+      gameState = createInitialState();
       return json({ success: true });
     }
 

@@ -855,44 +855,119 @@ let currentPhase = 'LOBBY';
 let allPlayers = [];      // [{playerId, name}]
 let currentGuesserId = null;
 let currentCard = null;
-let eventSource = null;
+let lastVersion = 0;
+let lastPhase = '';
+let lastPlayerCount = 0;
+let lastCardsCount = 0;
+let lastGuessIndex = -1;
+let lastTruthIndex = -1;
+let lastResultCount = 0;
 
 // ─── Init ───
 function init() {
   document.getElementById(isHost ? 'host-view' : 'player-view').classList.remove('hidden');
-
   if (isHost) {
     initHost();
   } else {
     initPlayer();
   }
-  connectSSE();
+  startPolling();
 }
 
 // ═══════════════════════════════════════
-//  SSE Connection
+//  Polling (replaces SSE)
 // ═══════════════════════════════════════
-function connectSSE() {
-  const role = isHost ? 'host' : 'player';
-  eventSource = new EventSource(`/events?role=${role}`);
-
-  eventSource.addEventListener('message', (e) => {
+function startPolling() {
+  setInterval(async () => {
     try {
-      const { event, data } = JSON.parse(e.data);
-      handleEvent(event, data);
-    } catch (err) {}
-  });
+      const endpoint = isHost ? '/api/state/full' : '/api/state';
+      const res = await fetch(endpoint);
+      const state = await res.json();
+      if (state.version === lastVersion) return;
 
-  eventSource.onerror = () => {
-    // Will auto-reconnect
-  };
+      if (isHost) {
+        applyHostState(state);
+      } else {
+        applyPlayerState(state);
+      }
+
+      lastVersion = state.version;
+      lastPhase = state.phase;
+    } catch(e) {}
+  }, 2000);
 }
 
-function handleEvent(event, data) {
-  if (isHost) {
-    handleHostEvent(event, data);
-  } else {
-    handlePlayerEvent(event, data);
+function applyHostState(state) {
+  if (state.phase !== lastPhase || !lastVersion) {
+    currentPhase = state.phase;
+    document.getElementById('host-room-code').textContent = state.roomCode || '----';
+    updateHostPhaseUI(state.phase);
+    if (state.phase === 'PHOTO') renderPhotoMosaic();
+  }
+  // Player list
+  const newPlayers = Object.entries(state.players || {}).map(([id, p]) => ({ playerId: id, name: p.name }));
+  if (newPlayers.length !== lastPlayerCount) {
+    allPlayers = newPlayers;
+    renderHostPlayers();
+    lastPlayerCount = newPlayers.length;
+  }
+  // Card progress
+  const cardsDone = Object.keys(state.cards || {}).length;
+  if (cardsDone !== lastCardsCount) {
+    renderHostCardProgress({ cardsSubmitted: cardsDone, totalPlayers: Object.keys(state.players||{}).length, players: state.players });
+    lastCardsCount = cardsDone;
+  }
+  // Guess phase
+  if (state.phase === 'GUESS' && state.guessOrder && state.currentGuessIndex !== lastGuessIndex) {
+    lastGuessIndex = state.currentGuessIndex;
+    const idx = state.currentGuessIndex;
+    if (idx < state.guessOrder.length) {
+      const guesserId = state.guessOrder[idx];
+      const cardOwnerId = state.guessAssignments[guesserId];
+      setupGuessUI({
+        guessOrder: state.guessOrder.map(id => ({ playerId: id, name: state.players[id]?.name || '?' })),
+        currentGuesser: { id: guesserId, name: state.players[guesserId]?.name || '?' },
+        currentCard: state.cards[cardOwnerId],
+        index: idx, total: state.guessOrder.length,
+      });
+    }
+  }
+  // Guess results
+  if (state.guessResults && state.guessResults.length > lastResultCount) {
+    const latest = state.guessResults[state.guessResults.length - 1];
+    showGuessResult(latest);
+    lastResultCount = state.guessResults.length;
+  }
+  // Truth or Dare
+  if (state.phase === 'BLUFF' && state.currentTruthIndex !== lastTruthIndex) {
+    lastTruthIndex = state.currentTruthIndex;
+    if (state.currentTruthIndex < state.truthOrder.length) {
+      showHostTruth({ target: state.truthTarget, index: state.currentTruthIndex, total: state.truthOrder.length });
+    } else {
+      showHostTruthDone();
+    }
+  }
+}
+
+function applyPlayerState(state) {
+  document.getElementById('player-room-display').textContent = state.roomCode || '----';
+  allPlayers = state.players || [];
+  if (state.phase !== lastPhase || !lastVersion) {
+    currentPhase = state.phase;
+    setPlayerPhase(state.phase);
+  }
+  // Guess phase for player
+  if (state.phase === 'GUESS' && state.currentGuesser) {
+    updatePlayerGuessUI(state);
+  }
+  // Truth phase
+  if (state.phase === 'BLUFF') {
+    if (state.truthTarget && state.currentTruthIndex < state.truthOrderLength) {
+      showTruthTarget({ target: state.truthTarget, index: state.currentTruthIndex, total: state.truthOrderLength });
+    }
+    if (state.currentTruthIndex >= state.truthOrderLength) {
+      showTruthDone();
+    }
   }
 }
 
@@ -901,113 +976,6 @@ function handleEvent(event, data) {
 // ═══════════════════════════════════════
 function initHost() {
   updateHostPhaseUI('LOBBY');
-  fetchState();
-}
-
-function handleHostEvent(event, data) {
-  switch (event) {
-    case 'init':
-      currentPhase = data.phase;
-      document.getElementById('host-room-code').textContent = data.roomCode;
-      allPlayers = Object.entries(data.players || {}).map(([id, p]) => ({ playerId: id, name: p.name }));
-      updateHostPhaseUI(data.phase);
-      renderHostPlayers();
-      renderHostCardProgress(data);
-      if (data.phase === 'GUESS') setupGuessUI(data);
-      if (data.phase === 'BLUFF') setupHostBluffUI(data);
-      break;
-
-    case 'player-joined':
-      allPlayers.push({ playerId: data.playerId, name: data.name });
-      renderHostPlayers();
-      break;
-
-    case 'player-list-update':
-      allPlayers = Object.entries(data.players).map(([id, name]) => ({ playerId: id, name }));
-      renderHostPlayers();
-      break;
-
-    case 'phase-changed':
-      currentPhase = data.phase;
-      updateHostPhaseUI(data.phase);
-      if (data.phase === 'GUESS') fetchFullState();
-      if (data.phase === 'BLUFF') setupHostBluffUI(data);
-      if (data.phase === 'PHOTO') renderPhotoMosaic();
-      break;
-
-    case 'card-submitted':
-      renderHostCardProgress({
-        cardsSubmitted: data.cardsSubmitted,
-        totalPlayers: data.totalPlayers,
-      });
-      break;
-
-    case 'guess-setup': setupGuessUI(data); break;
-    case 'next-guesser': setupGuessUI(data); break;
-    case 'guess-result': showGuessResult(data); break;
-
-    case 'bluff-submitted':
-      document.getElementById('bluff-done').textContent = data.submittedCount;
-      document.getElementById('bluff-total').textContent = data.totalPlayers;
-      document.getElementById('bluff-progress-fill').style.width = (data.submittedCount / data.totalPlayers * 100) + '%';
-      break;
-
-    case 'bluff-round':
-      showHostBluffVoting(data);
-      break;
-
-    case 'bluff-vote-update':
-      document.getElementById('bluff-vote-count').textContent = data.voteCount;
-      break;
-
-    case 'bluff-reveal-host':
-      showHostBluffReveal(data);
-      break;
-
-    case 'bluff-phase-done':
-      showHostBluffLeaderboard(data.results);
-      break;
-
-    case 'game-reset':
-      location.reload();
-      break;
-  }
-}
-
-function fetchState() {
-  fetch('/api/state/full').then(r => r.json()).then(data => {
-    currentPhase = data.phase;
-    document.getElementById('host-room-code').textContent = data.roomCode;
-    allPlayers = Object.entries(data.players || {}).map(([id, p]) => ({ playerId: id, name: p.name }));
-    updateHostPhaseUI(data.phase);
-    renderHostPlayers();
-    renderHostCardProgress(data);
-    if (data.phase === 'GUESS') fetchFullState();
-    if (data.phase === 'BLUFF') setupHostBluffUI(data);
-    if (data.phase === 'PHOTO') renderPhotoMosaic();
-  });
-}
-
-function fetchFullState() {
-  fetch('/api/state/full').then(r => r.json()).then(data => {
-    if (data.phase === 'GUESS' && data.guessOrder) {
-      setupGuessUI({
-        guessOrder: data.guessOrder.map(id => ({
-          playerId: id,
-          name: data.players[id]?.name || '?',
-        })),
-        currentGuesser: data.currentGuessIndex < data.guessOrder.length ? {
-          id: data.guessOrder[data.currentGuessIndex],
-          name: data.players[data.guessOrder[data.currentGuessIndex]]?.name || '?',
-        } : null,
-        currentCard: data.currentGuessIndex < data.guessOrder.length
-          ? data.cards[data.guessAssignments[data.guessOrder[data.currentGuessIndex]]]
-          : null,
-        index: data.currentGuessIndex,
-        total: data.guessOrder.length,
-      });
-    }
-  });
 }
 
 function updateHostPhaseUI(phase) {
@@ -1273,7 +1241,6 @@ function resetGame() {
 //  PLAYER LOGIC
 // ═══════════════════════════════════════
 function initPlayer() {
-  // Always start with join form visible in LOBBY
   setPlayerPhase('LOBBY');
 
   // Try rejoin if we have a stored playerId
@@ -1293,74 +1260,16 @@ function initPlayer() {
         sessionStorage.setItem('playerName', playerName);
         setPlayerPhase(data.phase || 'LOBBY');
       } else {
-        // Invalid player, reset
         playerId = null;
         sessionStorage.removeItem('playerId');
         setPlayerPhase('LOBBY');
       }
     }).catch(() => {
-      // Rejoin failed, clear and let user join fresh
       playerId = null;
       sessionStorage.removeItem('playerId');
       setPlayerPhase('LOBBY');
     });
   }
-
-  fetchStatePlayer();
-}
-
-function handlePlayerEvent(event, data) {
-  switch (event) {
-    case 'init':
-      currentPhase = data.phase;
-      document.getElementById('player-room-display').textContent = data.roomCode;
-      allPlayers = data.players || (data.playerNames || []).map((name, i) => ({ playerId: '_' + i, name }));
-      setPlayerPhase(data.phase);
-      if (data.phase === 'GUESS') updatePlayerGuessUI(data);
-      break;
-
-    case 'phase-changed':
-      currentPhase = data.phase;
-      setPlayerPhase(data.phase);
-      break;
-
-    case 'guess-turn-update':
-      fetchStatePlayer();
-      break;
-
-    case 'guess-result-public':
-      document.getElementById('guess-feedback').innerHTML =
-        `${escHtml(data.guesserName)} ${data.correct ? '猜对了！🎉' : '猜错了 😅 — 实际是 ' + escHtml(data.cardOwnerName)}`;
-      break;
-
-    case 'truth-target':
-      showTruthTarget(data);
-      break;
-
-    case 'truth-phase-done':
-      showTruthDone();
-      break;
-
-    case 'game-reset':
-      playerId = null;
-      sessionStorage.removeItem('playerId');
-      location.reload();
-      break;
-  }
-}
-
-function fetchStatePlayer() {
-  // For non-initial load, fetch player-specific state
-  if (!playerId) return;
-  fetch('/api/state').then(r => r.json()).then(data => {
-    currentPhase = data.phase;
-    allPlayers = data.players || (data.playerNames || []).map((name, i) => ({ playerId: '_' + i, name }));
-    // NOTE: Do NOT call setPlayerPhase here — it would call fetchStatePlayer again, causing infinite loop
-    if (data.phase === 'GUESS') {
-      updatePlayerGuessUI(data);
-    }
-    if (data.phase === 'BLUFF') setupPlayerBluffUI(data);
-  });
 }
 
 function setPlayerPhase(phase) {
@@ -1394,9 +1303,6 @@ function setPlayerPhase(phase) {
     document.getElementById('player-waiting').classList.toggle('hidden', !playerId);
   }
 
-  if (phase === 'GUESS') {
-    fetchStatePlayer();
-  }
 }
 
 // ─── Player Actions ───

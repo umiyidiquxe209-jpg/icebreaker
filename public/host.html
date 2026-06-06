@@ -282,89 +282,94 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--g
 const PHASES = ['LOBBY', 'CARDS', 'GUESS', 'BLUFF', 'PHOTO'];
 let currentPhase = 'LOBBY';
 let allPlayers = [];
-let eventSource = null;
+let lastVersion = 0;
+let lastPhase = '';
+let lastPlayerCount = 0;
+let lastCardsCount = 0;
+let lastGuessIndex = -1;
+let lastTruthIndex = -1;
+let lastResultCount = 0;
 
 // ─── Init ───
 window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('host-view').classList.remove('hidden');
-  fetchState();
-  connectSSE();
-  // Fetch public URL from server (auto-detected from tunnel)
-  fetch('/api/public-url').then(r => r.json()).then(d => {
-    const joinUrl = d.url || (location.protocol + '//' + d.localIP + ':' + location.port + '/');
-    document.getElementById('host-join-url').textContent = joinUrl;
-    setTimeout(generateQR, 500);
-    setTimeout(generateQR, 2500);
-  }).catch(() => {
-    const joinUrl = location.origin + '/';
-    document.getElementById('host-join-url').textContent = joinUrl;
-  });
+  startPolling();
+  document.getElementById('host-join-url').textContent = location.origin + '/';
   setTimeout(generateQR, 800);
   setTimeout(generateQR, 3000);
 });
 
-function connectSSE() {
-  eventSource = new EventSource('/events?role=host');
-  eventSource.addEventListener('message', (e) => {
-    try { const { event, data } = JSON.parse(e.data); handleEvent(event, data); } catch(err) {}
-  });
-  eventSource.onerror = () => {};
-}
+function startPolling() {
+  setInterval(async () => {
+    try {
+      const res = await fetch('/api/state/full');
+      const state = await res.json();
+      if (state.version === lastVersion) return;
 
-function handleEvent(event, data) {
-  switch (event) {
-    case 'init':
-      currentPhase = data.phase;
-      document.getElementById('host-room-code').textContent = data.roomCode;
-      allPlayers = Object.entries(data.players || {}).map(([id, p]) => ({ playerId: id, name: p.name }));
-      updateHostPhaseUI(data.phase);
-      renderHostPlayers();
-      renderHostCardProgress(data);
-      if (data.phase === 'GUESS') fetchFullState();
-      break;
-    case 'player-joined': allPlayers.push({ playerId: data.playerId, name: data.name }); renderHostPlayers(); break;
-    case 'player-list-update': allPlayers = Object.entries(data.players).map(([id, name]) => ({ playerId: id, name })); renderHostPlayers(); break;
-    case 'phase-changed':
-      currentPhase = data.phase;
-      updateHostPhaseUI(data.phase);
-      if (data.phase === 'GUESS') fetchFullState();
-      if (data.phase === 'PHOTO') renderPhotoMosaic();
-      break;
-    case 'card-submitted': renderHostCardProgress({ cardsSubmitted: data.cardsSubmitted, totalPlayers: data.totalPlayers }); break;
-    case 'guess-setup': setupGuessUI(data); break;
-    case 'next-guesser': setupGuessUI(data); break;
-    case 'guess-result': showGuessResult(data); break;
-    case 'truth-target': showHostTruth(data); break;
-    case 'truth-phase-done': showHostTruthDone(); break;
-    case 'game-reset': location.reload(); break;
-  }
-}
+      // Phase change
+      if (!lastVersion || state.phase !== lastPhase) {
+        currentPhase = state.phase;
+        document.getElementById('host-room-code').textContent = state.roomCode || '----';
+        updateHostPhaseUI(state.phase);
+        if (state.phase === 'PHOTO') renderPhotoMosaic();
+      }
 
-function fetchState() {
-  fetch('/api/state/full').then(r => r.json()).then(data => {
-    currentPhase = data.phase;
-    document.getElementById('host-room-code').textContent = data.roomCode;
-    allPlayers = Object.entries(data.players || {}).map(([id, p]) => ({ playerId: id, name: p.name }));
-    updateHostPhaseUI(data.phase);
-    renderHostPlayers();
-    renderHostCardProgress(data);
-    if (data.phase === 'GUESS') fetchFullState();
-    if (data.phase === 'BLUFF') setupHostBluffUI(data);
-    if (data.phase === 'PHOTO') renderPhotoMosaic();
-  });
-}
+      // Player list
+      const newPlayers = Object.entries(state.players || {}).map(([id, p]) => ({ playerId: id, name: p.name }));
+      if (newPlayers.length !== lastPlayerCount) {
+        allPlayers = newPlayers;
+        renderHostPlayers();
+        lastPlayerCount = newPlayers.length;
+      }
 
-function fetchFullState() {
-  fetch('/api/state/full').then(r => r.json()).then(data => {
-    if (data.phase === 'GUESS' && data.guessOrder && data.currentGuessIndex < data.guessOrder.length) {
-      setupGuessUI({
-        guessOrder: data.guessOrder.map(id => ({ playerId: id, name: data.players[id]?.name || '?' })),
-        currentGuesser: { id: data.guessOrder[data.currentGuessIndex], name: data.players[data.guessOrder[data.currentGuessIndex]]?.name || '?' },
-        currentCard: data.cards[data.guessAssignments[data.guessOrder[data.currentGuessIndex]]],
-        index: data.currentGuessIndex, total: data.guessOrder.length,
-      });
-    }
-  });
+      // Card progress
+      const cardsDone = Object.keys(state.cards || {}).length;
+      if (cardsDone !== lastCardsCount) {
+        renderHostCardProgress({ cardsSubmitted: cardsDone, totalPlayers: Object.keys(state.players||{}).length, players: state.players });
+        lastCardsCount = cardsDone;
+      }
+
+      // Guess phase
+      if (state.phase === 'GUESS' && state.guessOrder && state.currentGuessIndex !== lastGuessIndex) {
+        lastGuessIndex = state.currentGuessIndex;
+        const idx = state.currentGuessIndex;
+        if (idx < state.guessOrder.length) {
+          const guesserId = state.guessOrder[idx];
+          const cardOwnerId = state.guessAssignments[guesserId];
+          setupGuessUI({
+            guessOrder: state.guessOrder.map(id => ({ playerId: id, name: state.players[id]?.name || '?' })),
+            currentGuesser: { id: guesserId, name: state.players[guesserId]?.name || '?' },
+            currentCard: state.cards[cardOwnerId],
+            index: idx, total: state.guessOrder.length,
+          });
+        }
+      }
+
+      // Guess results
+      if (state.guessResults && state.guessResults.length > lastResultCount) {
+        const latest = state.guessResults[state.guessResults.length - 1];
+        showGuessResult(latest);
+        lastResultCount = state.guessResults.length;
+      }
+
+      // Truth or Dare
+      if (state.phase === 'BLUFF' && state.currentTruthIndex !== lastTruthIndex) {
+        lastTruthIndex = state.currentTruthIndex;
+        if (state.currentTruthIndex < state.truthOrder.length) {
+          showHostTruth({
+            target: state.truthTarget,
+            index: state.currentTruthIndex,
+            total: state.truthOrder.length
+          });
+        } else {
+          showHostTruthDone();
+        }
+      }
+
+      lastVersion = state.version;
+      lastPhase = state.phase;
+    } catch(e) {}
+  }, 2000);
 }
 
 function updateHostPhaseUI(phase) {
